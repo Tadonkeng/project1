@@ -1,0 +1,48 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: tiger-ranch
+spec:
+  hosts:
+    - "pedestal-mission.odin.dso.mil"
+  gateways:
+    - istio-system/public
+  http:
+    - match:
+        - uri:
+            prefix: /oauth
+      route:
+        - destination:
+            host: pedestal-ui.tiger-ranch.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /itk-ingest/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: itk-ingest.tiger-ranch.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /api/
+      route:
+        - destination:
+            host: pedestal-api.tiger-ranch.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /pedestal-ui/
+        - uri:
+            prefix: /
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: pedestal-ui.tiger-ranch.svc.cluster.local
+            port:
+              number: 80

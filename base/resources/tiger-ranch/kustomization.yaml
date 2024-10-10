@@ -1,0 +1,7 @@
+resources:
+  - virtual-service.yaml
+components:
+  - ../../secrets
+  - ../../../../cluster-secrets/prod/common-secrets/
+  - ../../../../cluster-secrets/prod/minio-admin-secrets/
+  - ../../../../cluster-secrets/prod/minio-connect-info/

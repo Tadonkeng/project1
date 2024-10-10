@@ -1,0 +1,25 @@
+resources:
+  - ./namespace.yaml
+  - ../../../../plugins/auth_policies/
+  - ../../../../plugins/network_policies_db/
+
+components:
+  - ../../../../cluster-secrets/prod/common-secrets/
+  - ../../../../cluster-secrets/prod/minio-admin-secrets/
+  - ../../../../cluster-secrets/prod/minio-connect-info/
+  - ../../../../plugins/db_provisioner/
+  - ../../../../plugins/minio_provisioner/
+  - ../../secrets
+
+patchesStrategicMerge:
+  - patches/auth-policy-patch.yaml
+  - patches/add-postgis.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: add-extensions-sql
+    files:
+      - patches/add-extensions.sql
+      

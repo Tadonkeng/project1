@@ -1,0 +1,10 @@
+namespace: tiger-ranch
+
+resources:
+  - ../../plugins/auth_policies/
+  - ../../plugins/network_policies/
+  - namespace.yaml
+
+patchesStrategicMerge:
+  - auth-policy-patch.yaml
+  - net-policy-patch.yaml

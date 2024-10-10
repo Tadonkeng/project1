@@ -1,0 +1,18 @@
+namespace: tiger-ranch
+
+resources:
+  - ../../../../base/
+  - ../../../../base/resources/tiger-ranch/
+
+components:
+  - ../../../../../cluster-configmaps/prod/
+  - ../secrets/
+
+patches:
+  - path: ./patches/virtualservice-patch.yaml
+    target:
+      group: networking.istio.io
+      version: v1alpha3
+      kind: VirtualService
+      name: tiger-ranch
+

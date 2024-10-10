@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tiger-ranch-db
+  labels:
+    organization: odin-high
+    product: tiger-ranch
+    name: tiger-ranch
+    istio-injection: enabled

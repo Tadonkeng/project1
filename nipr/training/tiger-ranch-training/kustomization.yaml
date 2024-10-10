@@ -1,0 +1,33 @@
+namespace: tiger-ranch-training
+
+resources:
+  - ../../../../base/
+  - ../../../../base/resources/tiger-ranch/
+
+configMapGenerator:
+  - name: app-name
+    behavior: merge
+    literals: 
+      - APP_NAME=tiger-ranch-training
+
+components:
+  - ../../../../../cluster-configmaps/prod/
+  - ../secrets/
+
+patchesStrategicMerge:
+  - ./patches/auth-policy-patch.yaml
+  - ./patches/net-policy-patch.yaml
+
+patches:
+  - path: ./patches/namespace-patch.yaml
+    target:
+      version: v1
+      kind: Namespace
+      name: tiger-ranch
+  - path: ./patches/virtualservice-patch.yaml
+    target:
+      group: networking.istio.io
+      version: v1alpha3
+      kind: VirtualService
+      name: tiger-ranch
+

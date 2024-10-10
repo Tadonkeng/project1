@@ -1,0 +1,8 @@
+namespace: tiger-ranch-db
+
+resources:
+  - ../../../../base/resources/tiger-ranch-db/
+
+components:
+  - ../../../../../cluster-configmaps/prod/
+  - ../secrets/

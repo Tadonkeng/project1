@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ensure-app-rds-db
+  annotations:
+    argocd.argoproj.io/hook: Sync
+spec:
+  template:
+    spec:
+      containers:
+        - name: psql
+          command:
+            - /bin/bash
+            - -exc
+            - |
+              sleep 5
+
+              cp tmp/sql/init-db.sql tmp/init-db.sql
+              sed -i.bak "s|APPLICATION|${APP_NAME}|g" /tmp/init-db.sql
+              set +x
+              psql \
+                -v ADMIN_PASSWORD="'${APP_DB_ADMIN_PASSWORD}'" \
+                -v RW_PASSWORD="'${APP_DB_RW_PASSWORD}'" \
+                -v RO_PASSWORD="'${APP_DB_RO_PASSWORD}'" \
+                -f /tmp/init-db.sql
+
+              psql \
+                -v ADMIN_PASSWORD="'${APP_DB_ADMIN_PASSWORD}'" \
+                -v RW_PASSWORD="'${APP_DB_RW_PASSWORD}'" \
+                -v RO_PASSWORD="'${APP_DB_RO_PASSWORD}'" \
+                -d tigerranch_db \
+                -f /tmp/extensions/add-extensions.sql
+
+              # Exit sidecar gracefully
+              #curl -sf -XPOST http://127.0.0.1:15020/quitquitquit
+          volumeMounts:
+            - name: add-extensions-sql
+              mountPath: /tmp/extensions/
+      volumes:
+        - name: add-extensions-sql
+          configMap:
+              name: add-extensions-sql
