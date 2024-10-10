@@ -1,0 +1,12 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+   labels:
+      app: zookeeper
+   name: zookeeper
+spec:
+   accessModes:
+      - "ReadWriteOnce"
+   resources:
+      requests:
+         storage: "10Gi"

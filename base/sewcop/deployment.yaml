@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sewcop
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      imagePullSecrets:
+      - name: code-il5-pull-creds
+      containers:
+      - name: sewcop
+        image: sewol/sewcop
+        resources:
+          limits:
+            memory: 1Gi
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 30
+        env:
+        - name: LOG_LEVEL
+          value: INFO
+        - name: KAFKA_HOST
+          value: kafka.sewol.svc.cluster.local:9092
+        - name: SUBSYSTEM
+          value: SEWCOP                    
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: ephemeral
+          mountPath: /tmp
+      volumes:
+      - name: ephemeral
+        emptyDir: {}

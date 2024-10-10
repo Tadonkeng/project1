@@ -1,0 +1,536 @@
+asyncapi: 3.0.0
+info:
+  title: SEWOL
+  version: '1.0.0'
+servers:
+  kafka:
+    host: kafka:9092
+    description: The SEWOL Kafka server.
+    protocol: kafka
+channels:
+  taskingOrder:
+    address: taskingOrder
+    title: Tasking Order
+    description: Kafka topic for sending tasking order messages.
+    messages:
+      taskingOrderKafkaNotification:
+        name: taskingOrder
+        title: Tasking Order Notification
+        description: Notification message that a tasking order data object has been stored or updated in the database.
+        contentType: application/json
+        payload:
+          $ref: "#/components/schemas/taskingOrderNotification"
+  targetInfo:
+    address: targetInfo
+    title: Target Info
+    description: Kafka topic for sending Target Info messages.
+    messages:
+      targetInfoKafkaNotification:
+        name: targetInfo
+        title: Target Info Notification
+        description: Notification message that a Target Info data object has been stored or updated in the database.
+        contentType: application/json
+        payload:
+          $ref: "#/components/schemas/targetInfoNotification"
+  tles:
+    address: tles
+    title: TLEs
+    description: Kafka topic for sending TLE messages.
+    messages:
+      tleKafkaNotification:
+        name: tle
+        title: TLE Notification
+        description: Notification message that a TLE data object has been stored or updated in the database.
+        contentType: application/json
+        payload:
+          $ref: "#/components/schemas/tleNotification"
+components:
+  schemas:
+    kafkaNotificationHeader:
+      type: object
+      properties: 
+        notificationType:
+          type: string
+          description: Kafka notification type - enumerated value of [ADD, UPDATE, DELETE]
+        url:
+          type: string
+          description: URL to access the given data
+        id:
+          type: string
+          description: Object ID
+        oversizeMb:
+          type: boolean
+          description: Check as to whether the data is over the message size limit
+    taskingOrderNotification:
+      type: object
+      properties:
+        notificationHeader:
+          $ref: "#/components/schemas/kafkaNotificationHeader"
+        data:
+          $ref: "#/components/schemas/mtoDataObject"
+    targetInfoNotification:
+      type: object
+      properties:
+        notificationHeader:
+          $ref: "#/components/schemas/kafkaNotificationHeader"
+        data:
+          $ref: "#/components/schemas/targetInfoDataObject"
+    tleNotification:
+      type: object
+      properties:
+        notificationHeader:
+          $ref: "#/components/schemas/kafkaNotificationHeader"
+        data:
+          $ref: "#/components/schemas/tle"
+    missionObjective:
+      type: object
+      properties:
+        number:
+          type: string
+          description: Alphanumeric reference to the Commander's objective; used to correlate target networks to objectives.
+        name:
+          type: string
+          description: Descriptive name of the objective.
+        description:
+          type: string
+          description: Description of the Commander's objective.  May include the initial situation, outcome, and execution.
+    missionTarget:
+      type: object
+      properties:
+        targetType:
+          type: string
+          enum:
+          - Target Unit
+          - Target Network
+          - Target Signal
+          description: The target type for this entry in the MTO.  This will be a target unit, a target 
+            network, or an individual signal of interest.  The order of precedence is Target Signal, 
+            Target Network, and Target Unit.  For example, if an individual signal is defined and prioritized 
+            within the MTO, that takes precedence over the priority of that same signal within its network.
+        jiptlId:
+          type: string
+          description: The JIPTL ID of the target unit, network, or signal.
+        priorityValue:
+          type: integer
+          description: The target unit/network/signal priority within this MTO.
+        priorityLevel:
+          type: string
+          enum:
+          - H
+          - M
+          - L
+          description: The target unit/network/signal level within a given priority (high/medium/low).  
+            Priority value takes precedence over level.  For example, a 5M would be tasked ahead of a 5L or a 6H.
+        startTimeOfEffect:
+          type: string
+          description: Zulu date/time the effect is desired, if different from the Period Start of the MTO.
+            DDHHMM(Z)MMMYY
+        stopTimeOfEffect:
+          type: string
+          description: Zulu date/time the effect should cease, if different from the Period End of the MTO.
+            DDHHMM(Z)MMMYY
+        missionType:
+          type: string
+          enum:
+          - EA
+          - ES
+          description: Electromagnetic Support (ES) or Electromagnetic Attack (EA)
+        taskingType:
+          type: string
+          enum:
+          - Scheduled
+          - On-Command
+          - Conditional Based
+          description: 'How engagement will be triggered:
+            - Scheduled -- At a given start time
+            - On-Command -- Configured at a scheduled time and initiated on command (human-in-the-loop)
+            - Conditional Based -- Triggered by a given pre-condition'
+        conditionBasedTiming:
+          type: string
+          description: 'Conditional Based Task Only:  Conditioned Based details.  Required if 
+            Tasking Type is Conditional Based; not used if Tasking Type is Scheduled or On-Command.'
+        desiredEaEffect:
+          type: string
+          enum:
+          - Deceive
+          - Degrade
+          - Deny
+          - Disrupt
+          description: 'EA Mission Only:  EA effect that is to be applied to the target. 
+            Required if Mission Type is EA; not used if Mission Type is ES.'
+        desiredEffectDescription:
+          type: string
+          description: 'EA Mission Only:  Description of Commander''s intent for an 
+            effect on a specific target network.  Not used if Mission Type is ES.'
+    mtoDataObject:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Display name for this order
+        number:
+          type: integer
+          description: Sequential version number for this order
+        timestamp:
+          type: string
+          description: Zulu date/time the order was issued
+            DDHHMM(Z)MMMYY
+        periodStart:
+          type: string
+          description: Zulu date/time this order becomes effective
+            DDHHMM(Z)MMMYY
+        periodEnd:
+          type: string
+          description: Zulu date/time this order will be superceded
+            DDHHMM(Z)MMMYY
+        authority:
+          type: string
+          enum:
+          - SPACEFOR-CENT
+          - SPACEFOR-EURAF
+          - SPACEFOR-INDOPAC
+          - SPACEFOR-KOR
+          - SPACEFOR-STRATNORTH
+          - SPACESOC
+          description: Command unit issuing order
+        missionObjectives:
+          type: array
+          items:
+            $ref: "#/components/schemas/missionObjective"
+        missionTargets:
+          type: array
+          items:
+            $ref: "#/components/schemas/missionTarget"
+        orderDateTimeGroup:
+          type: string
+          description: Order date time group. Date and time order was issued.
+        orderNumber:
+          type: integer
+          description: Sequential id for Tasking Order.
+        orderPeriodCoveredStart:
+          type: string
+          description: Date and time Tasking Order becomes effective.
+        orderPeriodCoveredEnd:
+          type: string
+          description: Date and time Tasking Order becomes superceded.
+        missionType:
+          type: string
+          enum:
+          - EA
+          - ES
+          description: Mission Type.
+        targets:
+          type: array
+          items:
+            type: object
+            properties:
+              signals:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    soiDesignator:
+                      type: string
+                      description: SOI Designator. The Signal identifier.
+                    jpitlPriority:
+                      type: integer
+                      description: JPITL Priority. Joint Prioritized Integrated Targeting List Priority.
+                    c2Priority:
+                      type: string
+                      enum:
+                      - H
+                      - M
+                      - L
+                      description: C2 Priority is used for deconfliction when JPITL Priorities are equivalent.
+                    startTime:
+                      type: string
+                      description: Signal action window start time.
+                    endTime:
+                      type: string
+                      description: Signal action window end time.
+    targetDataObject:
+      type: object
+      properties:
+        soiDesignator:
+          type: string
+          description: Signal identifier within this target package.
+        targetAssociations:
+          type: array
+          description: An array of JIPTL IDs that are associated with this signal.  This will include the ID of the signal 
+            itself and any target units and target networks that include this signal of interest.
+          items:
+            type: string
+        timestamp:
+          type: string
+          description: Zulu date/time of this SOI definition for correlation in the database.
+        idStatus:
+          type: string
+          enum:
+          - Suspect
+          - Bandit
+          - Meets ID Criteria
+          description: Signal categorization based on ID criteria.
+        priorityValue:
+          type: integer
+          description: Priority Value of this target. Lower numbers are higher priority.
+        priorityLevel:
+          type: string
+          enum:
+          - H
+          - M
+          - L
+          description: Priority Level of this target (high/medium/low) within a given priority.  Priority value takes
+            precedence over priority level.  For example, a 5M would be tasked ahead of a 5L or a 6H.
+        backupDesignator:
+          type: string
+          description: Any additional SOI detail set associated with this SOI.
+        uplink:
+          $ref: "#/components/schemas/uplinkDataObject"
+        downlink:
+          $ref: "#/components/schemas/downlinkDataObject"
+    uplinkDataObject:
+      type: object
+      properties:
+        satellite:
+          type: string
+          description: The NORAD ID of the satellite associated with this SOI uplink.  This ID will be used to 
+            look up the satellite Two-Line Element set (TLE) when conducting an EA mission on this target.  The 
+            uplink satellite and downlink satellite may be different if this SOI is targeting a crosslink.
+        satAssociation:
+          type: string
+          description: Satellite association.  This may be a country, consortium, military, civilian, commercial, etc.
+        satBeamId:
+          type: string
+          description: Beam Identifier.
+        satAperture:
+          type: string
+          description: Satellite Rx Aperture.
+        satTransponder:
+          type: string
+          description: Satellite Rx Transponder.
+        satModemType:
+          type: string
+          description: Satellite Rx Modem.
+        polarization:
+          type: string
+          enum:
+          - Horizontal
+          - Vertical
+          - Left Hand Circular
+          - Right Hand Circular
+          description: Uplink antenna polarization.
+        centerFrequency:
+          type: number
+          description: Uplink signal center frequency in MHz.
+        signalConfidence:
+          type: string
+          enum:
+          - Estimate
+          - Actual
+          description: Uplink signal confidence.
+        persistence:
+          type: string
+          enum:
+          - Intermittent
+          - Continuous
+          - Cycled
+          description: Uplink signal transmit persistence.
+        maxBandwidth:
+          type: number
+          description: Uplink signal bandwidth in MHz.
+        modulation:
+          type: string
+          enum:
+          - AWGN
+          - BPSK
+          - CW
+          - FM
+          - OQPSK
+          - QPSK
+          description: Uplink signal modulation.
+        symbolRate:
+          type: number
+          description: Uplink waveform symbol rate in Msps (Mega symbols per second).
+        fec:
+          type: string
+          enum:
+          - 1/2
+          - 3/4
+          - 5/6
+          - None
+          description: Uplink waveform Forward Error Correction (FEC).
+        channelId:
+          type: string
+          description: Uplink channel identifier within the network.
+        maxJsr:
+          type: number
+          description: Maximum Jamming to Signal Ratio (JSR) that should be applied in dB.
+        eirp:
+          type: number
+          description: Maximum Effective Isotropic Radiated Power (EIRP) that should be produced in dBW.
+        tle:
+          $ref: "#/components/schemas/tle"
+    downlinkDataObject:
+      type: object
+      properties:
+        satellite:
+          type: string
+          description: The NORAD ID of the satellite associated with this SOI downlink.  This ID will be used to 
+            look up the satellite Two-Line Element set (TLE) when conducting an ES mission on this target.  The 
+            downlink satellite and uplink satellite may be different if this SOI is targeting a crosslink.
+        satAssociation:
+          type: string
+          description: Satellite association.  This may be a country, consortium, military, civilian, commercial, etc.
+        satBeamId:
+          type: string
+          description: Beam Identifier for the downlink.
+        satAperture:
+          type: string
+          description: Satellite Tx Aperture for the downlink.
+        satTransponder:
+          type: string
+          description: Satellite Tx Transponder for the downlink.
+        satModemType:
+          type: string
+          description: Satellite Tx Modem for the downlink.
+        polarization:
+          type: string
+          enum:
+          - Horizontal
+          - Vertical
+          - Left Hand Circular
+          - Right Hand Circular
+          description: Downlink antenna polarization.
+        centerFrequency:
+          type: number
+          description: Downlink signal center frequency in MHz.
+        signalConfidence:
+          type: string
+          enum:
+          - Estimate
+          - Actual
+          description: Downlink signal confidence.
+        persistence:
+          type: string
+          enum:
+          - Intermittent
+          - Continuous
+          - Cycled
+          description: Downlink signal transmit persistence.
+        bandwidth:
+          type: number
+          description: Downlink signal bandwidth in MHz.
+        modulation:
+          type: string
+          enum:
+          - AM
+          - FM
+          - PM
+          - PAM
+          - PWM
+          - PPM
+          description: Downlink signal modulation.
+        symbolRate:
+          type: number
+          description: Downlink waveform symbol rate in Msps (Mega symbols per second).
+        fec:
+          type: string
+          enum:
+          - 1/2
+          - 3/4
+          - 5/6
+          - None
+          description: Downlink waveform Forward Error Correction (FEC).
+        channelId:
+          type: string
+          description: Downlink channel identifier within the network.
+        tle:
+          $ref: "#/components/schemas/tle"
+    tle:
+      type: object
+      properties:
+        tleLine1:
+          type: string
+          description: TLE Line 1 from UDL.
+        tleLine2:
+          type: string
+          description: TLE Line 2 from UDL.
+        epoch:
+          type: string
+          description: Standard time and date epoch.
+        apogee:
+          type: string
+          description: apogee.
+        perigee:
+          type: string
+          description: perigee.
+        period:
+          type: string
+          description: period.
+        algorithm:
+          type: string
+          description: Algorithm of calculation.
+        source:
+          type: string
+          description: UDL source.
+        satelliteNumber:
+          type: integer
+          description: Satellite NORAD ID.
+        classification:
+          type: string
+          enum:
+          - U
+          - C
+          - S
+          description: Satellite classification.
+        launchYear:
+          type: integer
+          description: International designator, last 2 digits of launch year.
+        launchNumber:
+          type: integer
+          description: International designator, launch number of the year.
+        launchPiece:
+          type: string
+          description: Internation designator, launch piece of satellite.
+        epochYear:
+          type: integer
+          description: Last 2 digits of epoch year.
+        epochDay:
+          type: number
+          description: Epoch day and fractional portion of the day.
+        firstTimeDerivativeOfMeanMotion:
+          type: number
+          description: 1st derivative of mean motion; the ballistic coefficient.
+        secondTimeDerivativeOfMeanMotion:
+          type: number
+          description: 2nd derivative of the mean motion; In scientific notation.
+        bstarDragTerm:
+          type: number
+          description: B* drag term, or radiation pressure coefficient; In scientific notation.
+        ephemerisType:
+          type: integer
+          description: Ephemeris type; Almost always 0 which represents SGP4/SDP4.
+        elementNumber:
+          type: number
+          description: Element set number.  Incremented when a new TLE is generated for the object.
+        inclination:
+          type: number
+          description: Inclination in degrees.
+        rightAscensionOfAscendingNode:
+          type: number
+          description: Right ascension of the ascending node in degrees.
+        eccentricity:
+          type: number
+          description: Eccentricity of satellite; In scientific notation.
+        argumentOfPerigee:
+          type: number
+          description: Argument of perigee in degrees.
+        meanAnomaly:
+          type: number
+          description: Mean anomaly in degrees.
+        meanMotion:
+          type: number
+          description: Mean motion in revolutions per day.
+        revolutionsAtEpoch:
+          type: integer
+          description: Revolution number at epoch in revolutions.

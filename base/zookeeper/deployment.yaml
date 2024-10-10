@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper
+spec:
+  revisionHistoryLimit: 1
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1001
+      imagePullSecrets:
+      - name: code-il5-pull-creds
+      containers:
+      - name: zookeeper
+        image: registry1.dso.mil/ironbank/bitnami/zookeeper:3.8.2
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 1000m
+            memory: 1Gi
+        ports:
+          - containerPort: 2181
+        env:
+        - name: ALLOW_ANONYMOUS_LOGIN
+          value: "yes"
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        volumeMounts:
+        - mountPath: "/bitnami"
+          name: zookeeper
+      volumes:
+      - name: zookeeper
+        persistentVolumeClaim:
+          claimName: zookeeper
+      

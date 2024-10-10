@@ -1,0 +1,14 @@
+{
+  "schedule": "0 15 18 * * ?",
+  "name": "<auditlog-snap-{now/d}>",
+  "repository": "sewol_s3_repository",
+  "config": {
+    "indices": "sewol-log",
+    "include_global_state": true
+  },
+  "retention": {
+    "expire_after": "60d",
+    "min_count": 5,
+    "max_count": 50
+  }
+}

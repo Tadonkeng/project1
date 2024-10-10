@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sewol-administration
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      imagePullSecrets:
+      - name: code-il5-pull-creds
+      containers:
+      - name: sewol-administration
+        image: sewol/sewol-administration
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 1
+          timeoutSeconds: 2
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 5
+        env:
+        - name: LOG_LEVEL
+          value: INFO
+        - name: KAFKA_HOST
+          value: kafka.sewol.svc.cluster.local:9092
+        - name: SUBSYSTEM
+          value: ADMIN       
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: ephemeral
+          mountPath: /tmp
+      volumes:
+      - name: ephemeral
+        emptyDir: {}

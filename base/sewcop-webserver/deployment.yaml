@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sewcop-webserver
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      imagePullSecrets:
+      - name: code-il5-pull-creds
+      containers:
+      - name: sewcop-webserver
+        image: sewol/sewcop-webserver
+        livenessProbe:
+          exec:
+            command:
+              - ls
+              - /var/www
+          initialDelaySeconds: 15
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /index.html
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 5
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: ephemeral
+          mountPath: /tmp
+      volumes:
+      - name: ephemeral
+        emptyDir: {}

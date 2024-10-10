@@ -1,10 +1,22 @@
-namespace: tiger-ranch
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonLabels:
+  authentication: istio-auth
 
 resources:
-  - ../../plugins/auth_policies/
-  - ../../plugins/network_policies/
-  - namespace.yaml
-
-patchesStrategicMerge:
-  - auth-policy-patch.yaml
-  - net-policy-patch.yaml
+  - activemq
+  - coi-rmt-communication
+  - coi-rmt-processing
+  - coi-rmt-simulator
+  - data-service
+  - elasticsearch
+  - kafka
+  - logstash
+  - repository
+  - sewcop
+  - sewcop-webserver
+  - sewol-administration
+  - tacc2
+  - zookeeper
+  - ../debug-pods/minio

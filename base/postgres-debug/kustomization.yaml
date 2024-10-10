@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonLabels:
+  app: express-ui4
+  authentication: istio-auth
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: sql-test-scripts
+  files:
+  - tests/create-table.sql
+  - tests/delete.sql
+  - tests/drop-table.sql
+  - tests/grant-ro.sql
+  - tests/grant-rw.sql
+  - tests/grant-usage-rw.sql
+  - tests/insert.sql
+  - tests/select.sql
+  - tests/update.sql
+  - scripts/postgresql-check.sh
+
+resources:
+- job.yaml

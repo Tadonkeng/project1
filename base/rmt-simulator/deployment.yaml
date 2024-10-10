@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rmt-simulator
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      imagePullSecrets:
+      - name: code-il4-pull-creds
+      containers:
+      - name: rmt-simulator
+        image: narwol/rmt-simulator
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 0.5
+            memory: 1Gi
+          requests:
+            cpu: 250m
+            memory: 128Mi
+

@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: logstash
+  annotations:
+        service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  selector:
+    app: logstash
+  ports:
+  - protocol: TCP
+    port: 5044
+    targetPort: 5044

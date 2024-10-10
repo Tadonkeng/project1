@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activemq
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      imagePullSecrets:
+      - name: code-il5-pull-creds
+      containers:
+      - name: activemq
+        image: registry1.dso.mil/ironbank/opensource/apache/active-mq-artemis:2.31.2
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: artemismq-creds
+        env:
+        - name: ANONYMOUS_LOGIN
+          value: "true"
+        ports:
+        - containerPort: 8161
+        - containerPort: 61616
+        - containerPort: 61617   
+        - containerPort: 5672                             
+        resources:
+          limits:
+            memory: 1Gi

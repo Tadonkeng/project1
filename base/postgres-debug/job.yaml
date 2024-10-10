@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mdo-postgres-checker
+  annotations:
+    argocd.argoproj.io/hook: Sync
+spec:
+  backoffLimit: 5
+  # Leave the job pod up for 30 days
+  activeDeadlineSeconds: 2592000
+  template:
+    spec:
+      imagePullSecrets:
+      - name: code-il2-pull-creds
+      restartPolicy: Never
+      containers:
+      - name: postgres-test
+        image: registry1.dso.mil/ironbank/opensource/postgres/postgresql11:11.20-2
+        command: ['/bin/sh', '-c']
+        args:
+          - |
+            /tmp/scripts/postgresql-check.sh;
+            x=$(echo $?); curl -fsI -X POST http://localhost:15020/quitquitquit && exit $x
+        resources:
+          limits:
+            cpu: 25m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 26
+        envFrom:
+        - secretRef:
+            name: app-db-credentials
+        - secretRef:
+            name: postgres-connect-info
+        - configMapRef:
+            name: app-name
+        volumeMounts:
+          - name: scripts
+            mountPath: "/tmp/scripts"
+      volumes:
+        - name: scripts
+          configMap:
+            defaultMode: 0755
+            name: sql-test-scripts
+            items:
+              - key: "create-table.sql"
+                path: "create-table.sql"
+              - key: "delete.sql"
+                path: "delete.sql"
+              - key: "drop-table.sql"
+                path: "drop-table.sql"
+              - key: "grant-ro.sql"
+                path: "grant-ro.sql"
+              - key: "grant-rw.sql"
+                path: "grant-rw.sql"
+              - key: "grant-usage-rw.sql"
+                path: "grant-usage-rw.sql"
+              - key: "insert.sql"
+                path: "insert.sql"
+              - key: "postgresql-check.sh"
+                path: "postgresql-check.sh"
+              - key: "select.sql"
+                path: "select.sql"
+              - key: "update.sql"
+                path: "update.sql"

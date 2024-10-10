@@ -1,0 +1,33 @@
+[
+  {"op": "replace",
+   "path": "/spec/template/spec/containers/0/readinessProbe/initialDelaySeconds",
+   "value": 10},
+
+   {"op": "replace",
+   "path": "/spec/template/spec/containers/0/readinessProbe/periodSeconds",
+   "value": 30},
+
+   {"op": "replace",
+   "path": "/spec/template/spec/containers/0/readinessProbe/timeoutSeconds",
+   "value": 3},
+
+   {"op": "replace",
+   "path": "/spec/template/spec/containers/0/readinessProbe/failureThreshold",
+   "value": 1},
+
+   {"op": "replace",
+   "path": "/spec/template/spec/containers/0/livenessProbe/initialDelaySeconds",
+   "value": 10},
+
+   {"op": "replace",
+   "path": "/spec/template/spec/containers/0/livenessProbe/periodSeconds",
+   "value": 30},
+
+   {"op": "replace",
+   "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds",
+   "value": 3},
+
+   {"op": "replace",
+   "path": "/spec/template/spec/containers/0/livenessProbe/failureThreshold",
+   "value": 1}
+]

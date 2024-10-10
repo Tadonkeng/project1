@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coi-rmt-simulator
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      imagePullSecrets:
+      - name: code-il5-pull-creds
+      containers:
+      - name: coi-rmt-simulator
+        image: sewol/coi-rmt-simulator
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 2.5Gi
+          requests:
+            memory: 2.5Gi
+        volumeMounts:
+        - name: ephemeral
+          mountPath: /tmp
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 5
+        env:
+          - name: LOG_LEVEL
+            value: INFO
+          - name: KAFKA_HOST
+            value: kafka.sewol.svc.cluster.local:9092
+          - name: SUBSYSTEM
+            value: coi-rmt-simulator
+      volumes:
+      - name: ephemeral
+        emptyDir: {}

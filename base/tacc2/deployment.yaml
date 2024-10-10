@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tacc2
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      imagePullSecrets:
+      - name: code-il5-pull-creds
+      containers:
+      - name: tacc2
+        image: sewol/tacc2
+        imagePullPolicy: Always
+        env:
+        - name: LOG_LEVEL
+          value: INFO
+        - name: SUBSYSTEM
+          value: TACC2         
+        - name: KAFKA_HOST
+          value: kafka.sewol.svc.cluster.local:9092
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: S3_BUCKET_UUID
+          value: $(appS3BucketUUID)
+        - name: MINIO_HOST
+          value: $(host)
+        - name: MINIO_PORT
+          value: $(port)
+        - name: MINIO_PROTOCOL
+          value: $(protocol)
+        - name: MINIO_ACCESS_KEY
+          value: $(accesskey)
+        - name: MINIO_SECRET_KEY
+          value: $(secretkey)
+        - name: MINIO_BUCKET_NAME
+          value: minio-$(NAMESPACE)-$(CLUSTER_PREFIX)-$(S3_BUCKET_UUID)
+        - name: MINIO_REGION
+          value: us-gov-west-1
+        - name: MINIO_ENDPOINT_URL
+          value: $(protocol)://$(host):$(port)
+        resources:
+          limits:
+            memory: 1Gi
+        volumeMounts:
+        - name: ephemeral
+          mountPath: /tmp
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 5
+        envFrom:
+        - secretRef:
+            name: app-db-credentials
+        - secretRef:
+            name: postgres-connect-info
+        - configMapRef:
+            name: app-name
+        - secretRef:
+            name: minio-app-keys
+        - secretRef:
+            name: minio-connect-info
+      volumes:
+      - name: ephemeral
+        emptyDir: {}

@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonLabels:
+  app: elasticsearch
+  authentication: istio-auth
+
+configMapGenerator:
+# Remove elasticsearch configmap till it is finalized
+# - name: elasticsearch-config
+#   files:
+#   - elasticsearch.yml
+- name: post-start-scripts
+  files:
+  - scripts/post-start-script.sh
+  - scripts/snapshot-repository.json
+  - scripts/backup-policy.json
+  - scripts/index-policy.json
+
+resources:
+- statefulset.yaml
+- service.yaml

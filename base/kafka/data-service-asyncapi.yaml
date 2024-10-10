@@ -1,0 +1,1004 @@
+asyncapi: 3.0.0
+info:
+  title: SEWOL
+  version: '1.0.0'
+servers:
+  kafka:
+    host: kafka:9092
+    description: The SEWOL Kafka server.
+    protocol: kafka
+channels:
+  sewSystemCapabilities:
+    address: sewSystemCapabilities
+    title: SEW System Capabilities
+    description: Kafka topic for sending and receiving SEW System Capabilities messages
+    messages:
+      sewSystemCapabilityKafkaNotification:
+        name: sewSystemCapability
+        title: SEW System Capability
+        description: Notification message that a new SEW System capabilities data object has been stored in the database.
+        contentType: application/json
+        payload:
+          $ref: "#/components/schemas/sewSystemCapabilitiesNotification"
+  sewSystemStatus:
+    address: sewSystemStatus
+    title: SEW System Status
+    description: Kafka topic for sending and receiving SEW System Status messages
+    messages:
+      sewSystemStatusKafkaNotification:
+        name: sewSystemStatus
+        title: SEW System Status
+        description: Notification message that a new SEW System status data object has been stored in the database.
+        contentType: application/json
+        payload:
+          $ref: "#/components/schemas/sewSystemStatusNotification"
+  sewTask:
+    address: sew.task
+    title: SEW Task
+    description: Kafka topic for sending and receiving SEW Task messages
+    messages:
+      sewSystemStatusKafkaNotification:
+        name: sewTask
+        title: SEW Task
+        description: Notification message that a new SEW Task data object has been stored in the database.
+        contentType: application/json
+        payload:
+          $ref: "#/components/schemas/sewTaskNotification"
+  sewTaskExecStatus:
+    address: task.exec.status
+    title: SEW Task Exec Status
+    description: Kafka topic for sending and receiving SEW Task Exec Status messages
+    messages:
+      sewSystemStatusKafkaNotification:
+        name: sewTaskExecStatus
+        title: SEW Task Exec Status
+        description: Notification message that a new SEW Task Exec Status data object has been stored in the database.
+        contentType: application/json
+        payload:
+          $ref: "#/components/schemas/sewTaskExecStatusNotification"
+components:
+  schemas:
+    kafkaNotificationHeader:
+      type: object
+      properties: 
+        notificationType:
+          type: string
+          description: Kafka notification type - enumerated value of [ADD, UPDATE, DELETE]
+        url:
+          type: string
+          description: URL to access the given data
+        id:
+          type: string
+          description: Object ID
+        oversizeMb:
+          type: boolean
+          description: Check as to whether the data is over the message size limit
+    sewSystemCapabilitiesNotification:
+      type: object
+      properties:
+        notificationHeader:
+          $ref: "#/components/schemas/kafkaNotificationHeader"
+        data:
+          $ref: "#/components/schemas/sewSystemCapabilitiesDataObject"
+    sewSystemStatusNotification:
+      type: object
+      properties:
+        notificationHeader:
+          $ref: "#/components/schemas/kafkaNotificationHeader"
+        data:
+          $ref: "#/components/schemas/sewSystemStatusDataObject"
+    sewTaskNotification:
+      type: object
+      properties:
+        notificationHeader:
+          $ref: "#/components/schemas/kafkaNotificationHeader"
+        data:
+          $ref: "#/components/schemas/sewTaskDataObject"
+    sewTaskExecStatusNotification:
+      type: object
+      properties:
+        notificationHeader:
+          $ref: "#/components/schemas/kafkaNotificationHeader"
+        data:
+          $ref: "#/components/schemas/sewTaskExecStatusObject" 
+    sewSystemCapabilitiesDataObject:
+      type: object
+      description: The SEW system capabilities, including system name, antennas, receiver channels, 
+        transmit channels, software services, and supported TTPs.
+      properties: 
+        uuid:
+          type: string
+          description: COI-generated unique identifier (UUID) for this SEW System.
+        id:
+          type: string
+          description: Self-reported SEW System identifier
+        timestamp:
+          type: string
+          description: 'Timestamp when capability definition was last updated.
+            OpenAPI date-time format:
+            yyyy-mm-ddThh:mm:ssZ'
+        antennas:
+          type: array
+          description: The set of antennas deployed with this SEW system.
+          items:
+            $ref: "#/components/schemas/antennaObject"
+        software:
+          type: array
+          description: The list of software services.
+          items:
+            $ref: "#/components/schemas/sewSystemSoftwareService"
+        isEaCapable:
+          type: boolean
+        ttps:
+          type: array
+          description: The set of tactics, techniques, and procedures (i.e., EA effects) that are 
+            supported by this system.  This field is required, but the array may be empty.  At least 
+            one TTP should be defined if this SEW system is EA capable.
+          items:
+            $ref: "#/components/schemas/sewSystemTtp"
+        reportingMode:
+          type: string
+          enum:
+          - NORMAL
+          - QUIET
+          description: Current reporting mode of this SEW system.
+    antennaObject:
+      type: object
+      description: A SEW antenna definition.
+      properties: 
+        name:
+          type: string
+          description: Antenna name; unique within this SEW system
+        latitude:
+          type: number
+          description: Latitude of this location
+        longitude:
+          type: number
+          description: Longitude of this location
+        altitude:
+          type: integer
+          description: Altitude (in feet above Mean Sea Level (MSL)) of this location
+        isFixed:
+          type: boolean
+          description: Denotes if antenna is fixed or has positioners
+        fixedAzimuth:
+          type: number
+          description: The azimuth at which this fixed antenna is pointing; required for fixed antennas.
+        fixedElevation:
+          type: number
+          description: The elevation at which this fixed antenna is pointing; required for fixed antennas.
+        azimuthRanges:
+          type: array
+          description: A list of azimuth ranges this antenna can be positioned; required for non-fixed antennas.
+          items:
+            $ref: "#/components/schemas/Range"
+        minElevation:
+          type: number
+          description: The minimum elevation for this antenna; required for non-fixed antennas.
+        maxElevation:
+          type: number
+          description: The maximum elevation for this antenna; required for non-fixed antennas; 
+            must be greater than the minimum elevation.
+        feeds:
+          type: array
+          description: The set of antenna feeds for this antenna
+          items:
+            $ref: "#/components/schemas/sewSystemFeed"
+        receiverChannels:
+          type: array
+          description: The set of receive channels for this antenna
+          items:
+            $ref: "#/components/schemas/sewReceiverChannel"
+        transmitChannels:
+          type: array
+          description: The set of transmit channels for this antenna.  This field is required, but the array 
+            may be empty if this system is not EA-capable.
+          items:
+            $ref: "#/components/schemas/sewTransmitterChannel"
+    Range:
+      type: object
+      properties:
+        min:
+          type: number
+          description: The minimum value in this range.
+        max:
+          type: number
+          description: The maximum value in this range.
+    sewSystemFeed:
+      type: object
+      description: An antenna feed definition.
+      properties:
+        name:
+          type: string
+          description: Antenna feed name; unique within this antenna definition.
+        minFrequency:
+          type: number
+          description: Minimum RF frequency supported by this antenna feed.
+        maxFrequency:
+          type: number
+          description: Maximum RF frequency supported by this antenna feed.
+        polarization:
+          type: string
+          enum:
+          - Horizontal
+          - Vertical
+          - Left Hand Circular
+          - Right Hand Circular
+          description: Signal polarization used by this antenna feed.
+    sewReceiverChannel:
+      type: object
+      description: An RF receiver channel definition.
+      properties:
+        id:
+          type: string
+          description: Receiver channel ID; unique within this antenna definition.
+        minFrequency:
+          type: number
+          description: Minimum RF frequency.
+        maxFrequency:
+          type: number
+          description: Maximum RF frequency.
+        minBandwidth:
+          type: number
+          description: Minimum RF bandwidth.
+        maxBandwidth:
+          type: number
+          description: Maximum RF bandwidth.
+    sewTransmitterChannel:
+      type: object
+      description: An RF transmit channel definition.
+      properties:
+        id:
+          type: string
+          description: Receiver channel ID; unique within this antenna definition.
+        minFrequency:
+          type: number
+          description: Minimum RF frequency.
+        maxFrequency:
+          type: number
+          description: Maximum RF frequency.
+        minBandwidth:
+          type: number
+          description: Minimum RF bandwidth.
+        maxBandwidth:
+          type: number
+          description: Maximum RF bandwidth.
+        minGain:
+          type: number
+          description: Minimum RF gain.
+        maxGain:
+          type: number
+          description: Maximum RF gain.
+        hardwareSampleRate:
+          type: integer
+          description: Hardware sample rate supported by this channel
+        sampleRates:
+          type: array
+          description: List of sample rates supported by this channel
+          items:
+            type: number
+    sewSystemSoftwareService:
+      type: object
+      description: A software service hosted at the SEW system.
+      properties: 
+        name:
+          type: string
+          description: Service name
+        version:
+          type: string
+          description: Software version; typically formatted as major.minor.patch (e.g. 1.3.172)
+    sewSystemTtp:
+      type: object
+      description: An electronic attack definition, including relevant parameters.
+      properties: 
+        outputSignalName:
+          type: string
+          description: Output Signal Name
+        techniqueDefinitions:
+          type: array
+          description: Array of associated techniques
+          items:
+            $ref: "#/components/schemas/sewSystemTechniqueDefinition"
+    sewSystemTechniqueDefinition:
+      type: object
+      description: An EA technique.
+      properties: 
+        name:
+          type: string
+          description: Technique name
+        paramDefinitions:
+          type: array
+          description: Array of parameter definitions
+          items:
+            $ref: "#/components/schemas/sewSystemParameterDefinition"
+    sewSystemParameterDefinition:
+      type: object
+      description: A TTP technique parameter definition, including possible values, min/max, and units.
+      properties: 
+        name:
+          type: string
+          description: The parameter name
+        type:
+          type: string
+          enum:
+          - STRING
+          - DOUBLE
+          - INT
+          - LIST
+          description: The parameter data type
+        defaultValue:
+          type: string
+          description: Default value for the parameter
+        validValues:
+          type: array
+          description: List of valid values for a parameter
+          items:
+            type: string
+        min:
+          type: number
+          description: Minimum value for a double/integer parameter
+        max:
+          type: number
+          description: Maximum value for a double/integer parameter
+        units:
+          type: string
+          description: Units for a double/integer parameter (e.g. MHz)
+        isOptional:
+          type: boolean
+          description: Flag to specify whether the parameter is optional
+    sewTaskDataObject:
+      type: object
+      properties:
+        sewSystemUuid:
+          type: string
+          description: COI-generated unique identifier (UUID) for this SEW System that will conduct this task.
+        sewSystemName:
+          type: string
+          description: Self-reported SEW System identifier for this SEW System that will conduct this task.
+        taskingGroupId:
+          type: string
+          description: Tasking group UUID used to schedule this set of ES/TTP task(s) on a SEW System, 
+            correlate status events, and cancel the tasks in the future.
+        taskName:
+          type: string
+          description: Meaningful task name for planner reference on SEWCOP displays, in log messages, etc.
+        schedState:
+          type: string
+          enum:
+          - PROPOSED
+          - APPROVED
+          - PROPOSED_ADD
+          - PROPOSED_MODIFY
+          - PROPOSED_CANCEL
+          - CANCELLED
+          description: The current state of this task within the planning workflow.
+        execStatus:
+          $ref: "#/components/schemas/sewTaskExecStatusObject"
+        startTime:
+          type: string
+          description: The start time of this task.
+        endTime:
+          type: string
+          description: The end time of this task.
+        taskType:
+          type: string
+          enum:
+          - ES
+          - EA
+          description: 'The mission task type: Electronic Surveillance (ES) or Electronic Attack (EA).'
+        taskPriority:
+          type: string
+          description: The task priority, relative to other tasks on the schedule.  This is a concatenated 
+            string using the MissionTypeOrder priority, value/priority level and the TargetData priority 
+            value/priority level. For example, a task that is derived from an MTO mission target with 
+            pri 3, level H and Signal pri 8, level M would be concatenated as 3H/8M.
+        missionName:
+          type: string
+          description: Display name for this order.
+        missionNumber:
+          type: integer
+          description: Sequential version number for this order.
+        targetDetails:
+          $ref: "#/components/schemas/targetDetailsObject"
+        esTaskDetails:
+          $ref: "#/components/schemas/esTaskDetailsObject"
+    sewTaskExecStatusObject:
+      type: object
+      description: The current (last known) state of a SEW task that has been submitted to COI for execution. 
+        While a SEW task definition is static, its execution status will change multiple times as it is 
+        scheduled and executed at the remote SEW system.
+      properties:
+        taskingGroupId:
+          type: string
+          description: Tasking group UUID used to schedule this task on a the SEW System, correlate task 
+            status events, and cancel the task.
+        timestamp:
+          type: string
+          description: Timestamp when this status was reported by the source system.
+        execState:
+          type: string
+          enum:
+          - RECEIVED
+          - ISSUED_TO_SEW
+          - EXECUTING
+          - SUSPENDED
+          - COMPLETE
+          - RECEIVED_CANCEL
+          - CANCELLED
+          - FAILED
+          description: The current state of this task within the  execution workflow.
+        failureReason:
+          type: string
+          enum:
+          - UNKNOWN_SEW_SYSTEM
+          - TASK_IS_IN_THE_PAST
+          - INSUFFICIENT_TIME_BEFORE_TASK_END
+          - SEW_SYSTEM_REPORTED_TASK_REQUEST_FAILED
+          - SEW_SYSTEM_FAILED_TO_RESPOND
+          - SEW_SYSTEM_REPORTED_TASKING_ERROR
+          - SEW_SYSTEM_FAILED_TO_CANCEL
+          - TOO_LATE_TO_CANCEL
+          - OTHER
+          description: The reason that this task is being marked as 'failed'.  This is a pre-defined list 
+            of failure cases and COI will use OTHER to report any failure that is not covered by one of 
+            these known reasons.  A maintainer can review the COI logs to investigate further.
+        failureTime:
+          type: string
+          description: The timestamp that the failure occurred.  If the failure is being reported by a SEW 
+            system, the failure may have occurred earlier so the failure time will preceed the timestamp 
+            that COI uses above.  A maintainer will be able to correlate this failure time to entries in the RMT logs.
+    targetDetailsObject:
+      type: object
+      properties:
+        targetName:
+          type: string
+          description: A name for the target that can be reported back in SEW system status.  Since the SEW 
+            system may operate at a lower classification level, this should not be a common reference (like 
+            the Norad ID).
+          targetTle:
+            $ref: "#/components/schemas/tle"
+          targetOrbitalLongitude:
+            type: number
+            description: This is the longitude of the ascending node, also referred to as the right ascension 
+              of the ascending node (RAAN).  It is required by some SEW systems.
+          transponders:
+            type: array
+            description: An array of transponder data objects for the transponder(s) on the target satellite.
+            items:
+              $ref: "#/components/schemas/transponderDetailsObject"
+          beaconCenterFrequency:
+            type: number
+            description: Center frequency in MHz of beacon or other known signal to aid in peaking on target
+          transmitPolarity:
+            type: string
+            enum:
+            - Horizontal
+            - Vertical
+            - Left Hand Circular
+            - Right Hand Circular
+            description: The polarity of our polarizer when transmitting.  Used in TLE-based terminal pointing.
+          peakPolarity:
+            type: string
+            enum:
+            - Horizontal
+            - Vertical
+            - Left Hand Circular
+            - Right Hand Circular
+            description: The polarity used to peak on the beacon or other known signal to aid in peaking on the 
+              target.  Used in TLE-based terminal pointing.
+          manualPolarity:
+            type: number
+            description: The polling step of peaking/polling thats spins the polarizer in 10ths of degrees in 
+              range -90deg to +90deg; Used in Manual Terminal Pointing.
+          azimuth:
+            type: number
+            description: The specific azimuth to point to target satellite.
+          elevation:
+            type: number
+            description: The specific elevation to point to target satellite.
+    esTaskDetailsObject:
+      type: object
+      properties:
+        taskId:
+          type: string
+          description: Task UUID used to reference this specific ES task when it results in 
+            a signal parameter hit or a task trigger.
+        baudRate:
+          type: number
+          description: The rate at which information is transferred in a communication channel.
+        bandwidth:
+          type: number
+          description: The approximate bandwidth of the signal in kHz.
+        burstLength:
+          type: number
+          description: Burst Length is the approximate duration in seconds of the burst.
+        frequencies:
+          type: array
+          description: Exact center frequencies of the signal in MHz. Each of these frequencies 
+            must also be within an inputted search range.
+          items:
+            type: number
+        ranges:
+          type: array
+          description: List of frequency search ranges the signal may appear in.
+          items:
+            $ref: "#/components/schemas/Range"
+        snrThreshold:
+          type: number
+          description: The minimum signal to noise ratio (SNR) that will trigger a recording.
+        snrBetter:
+          type: number
+          description: If the SNR improves by this value, the system will record the signal even 
+            if the refresh period has not elapsed since the previous recording.
+        refreshRate:
+          type: number
+          description: In seconds, how long to wait before recording the next occurrence of the signal.
+        priority:
+          type: integer
+          description: Priority of recording used to prioritize retention during automatic cleanup. 
+            A higher number indicates a higher priority.
+        duration:
+          type: number
+          description: The length of the recording in seconds.
+        subBandTune:
+          type: number
+          description: Whether or not the resulting recording should be sub band tuned to the bandwidth. 
+            Bandwidth must be specified in order to sub band tune.
+        modulation:
+          type: string
+          enum:
+          - AM
+          - FM
+          - PM
+          - PAM
+          - PWM
+          - PPM
+          description: Downlink signal modulation.
+        trigger:
+          type: string
+          description: The UUID of another tasking (TTP) that should be triggered if this ES tasking 
+            detects a target signal.
+        triggerOffHit:
+          type: boolean
+          description: Indicate if another task should be triggered automatically off a ES hit.
+        confirmationRequired:
+          type: boolean
+          description: If a trigger is configured and confirmation_required is true, the trigger 
+            tasking will not be executed until positive confirmation has been received from the C2 
+            system
+    transponderDetailsObject:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name/number of this transponder on the target satellite.
+        downlinkFrequencyRange:
+          $ref: "#/components/schemas/Range"
+        translationFrequency:
+          type: integer
+          description: The 'static' translation frequency (in Hz) used to calculate the 
+            uplink frequency from the downlink center frequency
+        manualOffset:
+          type: integer
+          description: A further offset (in Hz) to cover real-world drift that may occur in 
+            transponder translation frequencies
+        peakPolarity:
+          type: string
+          enum:
+          - Horizontal
+          - Vertical
+          - Left Hand Circular
+          - Right Hand Circular
+          description: The polarity of this transponder
+    tle:
+      type: object
+      properties:
+        tleLine1:
+          type: string
+          description: TLE Line 1 from UDL.
+        tleLine2:
+          type: string
+          description: TLE Line 2 from UDL.
+        epoch:
+          type: string
+          description: Standard time and date epoch.
+        apogee:
+          type: string
+          description: apogee.
+        perigee:
+          type: string
+          description: perigee.
+        period:
+          type: string
+          description: period.
+        algorithm:
+          type: string
+          description: Algorithm of calculation.
+        source:
+          type: string
+          description: UDL source.
+        satelliteNumber:
+          type: integer
+          description: Satellite NORAD ID.
+        classification:
+          type: string
+          enum:
+          - U
+          - C
+          - S
+          description: Satellite classification.
+        launchYear:
+          type: integer
+          description: International designator, last 2 digits of launch year.
+        launchNumber:
+          type: integer
+          description: International designator, launch number of the year.
+        launchPiece:
+          type: string
+          description: Internation designator, launch piece of satellite.
+        epochYear:
+          type: integer
+          description: Last 2 digits of epoch year.
+        epochDay:
+          type: number
+          description: Epoch day and fractional portion of the day.
+        firstTimeDerivativeOfMeanMotion:
+          type: number
+          description: 1st derivative of mean motion; the ballistic coefficient.
+        secondTimeDerivativeOfMeanMotion:
+          type: number
+          description: 2nd derivative of the mean motion; In scientific notation.
+        bstarDragTerm:
+          type: number
+          description: B* drag term, or radiation pressure coefficient; In scientific notation.
+        ephemerisType:
+          type: integer
+          description: Ephemeris type; Almost always 0 which represents SGP4/SDP4.
+        elementNumber:
+          type: number
+          description: Element set number.  Incremented when a new TLE is generated for the object.
+        inclination:
+          type: number
+          description: Inclination in degrees.
+        rightAscensionOfAscendingNode:
+          type: number
+          description: Right ascension of the ascending node in degrees.
+        eccentricity:
+          type: number
+          description: Eccentricity of satellite; In scientific notation.
+        argumentOfPerigee:
+          type: number
+          description: Argument of perigee in degrees.
+        meanAnomaly:
+          type: number
+          description: Mean anomaly in degrees.
+        meanMotion:
+          type: number
+          description: Mean motion in revolutions per day.
+        revolutionsAtEpoch:
+          type: integer
+          description: Revolution number at epoch in revolutions.
+    sewSystemStatusDataObject:
+      type: object
+      properties:
+        sewSystemUuid:
+          type: string
+          description: COI-generated unique identifier (UUID) for this SEW System.
+        sewSystemName:
+          type: string
+          description: Self-reported SEW System identifier (e.g. RMT-700)
+        timestamp:
+          type: string
+          description: Timestamp when the SEW system status was last reported by COI.
+            The subcomponents of this status will have their own 'last update' times.
+        staleState:
+          type: string
+          enum:
+          - FRESH
+          - STALE
+          description: Fresh/stale state flag. This system status is 'stale' if the 
+            system is down or not reporting status at this time.
+        contentChanged:
+          type: boolean
+          description: Flag to indicate whether content within this SewSystemStatus 
+            object has changed since the last time it was published.  This assessment does
+            not include changes in the date/time parameters (e.g., timestamp, 
+            lastHeartbeatTime, lastBitTime, or lastUpdateTime) since the times may update 
+            but the overall state might be unchanged.
+        lastHeartbeatTime:
+          type: string
+          description: The timestamp from the last SEW system heartbeat message, or the 
+            timestamp from the last equipment poll.
+        alive:
+          type: boolean
+          description: SEW system heartbeat status, indicating if this SEW system is 
+            alive (True).
+        antennaStatus:
+          type: array
+          description: Array of SEW system antenna status objects.
+          items:
+            $ref: "#/components/schemas/sewAntennaStatusObject"
+        receiverStatus:
+          type: array
+          description: Array of SEW system receiver status objects.
+          items:
+            $ref: "#/components/schemas/sewReceiverStatusObject"
+        transmitterStatus:
+          type: array
+          description: Array of SEW system transmitter status objects.
+          items:
+            $ref: "#/components/schemas/sewTransmitterStatusObject"
+        systemHealth:
+          $ref: "#/components/schemas/sewSystemHealthObject"
+        systemConfig:
+          $ref: "#/components/schemas/sewSystemConfigurationObject"
+    sewAntennaStatusObject:
+      type: object
+      properties:
+        lastUpdateTime:
+          type: string
+          description: Last antenna status update time.
+        staleState:
+          type: string
+          enum:
+          - FRESH
+          - STALE
+          description: Fresh/stale state flag.   This antenna status is 'stale' if the 
+            antenna has not reported status since this SEW system was restarted.
+        antennaId:
+          type: string
+          description: Antenna Identifier
+        targetId:
+          type: string
+          description: An optional unique identifier for the target satellite being pointed at.
+        targetName:
+          type: string
+          description: A unique name for the target.
+        autoPeakOccurred:
+          type: boolean
+          description: Flag to indicate whether auto peak/pol occurred to verify this antenna 
+            re-point.
+        tle:
+          $ref: "#/components/schemas/tle"
+        azimuth:
+          type: number
+          description: Antenna azimuth, if pointed to a specific azimuth.
+        elevation:
+          type: number
+          description: Antenna elevation, if pointed to a specific elevation.
+        statusTime:
+          type: string
+          description: Timestamp of the last reported antenna pedestal status.
+        status:
+          type: string
+          enum:
+          - OFFLINE
+          - INTERLOCKED
+          - IDLE
+          - MOVING
+          - SCANNING
+          - TRACKING
+          - DONE
+          - ERROR
+          - PEAKING
+          description: The current status of a pedestal.
+        errorMessage:
+          type: string
+          description: Message spawned from status error.
+        pointingAccuracy:
+          type: number
+          description: Pointing accuracy of the terminal.
+        polarity:
+          type: number
+          description: The polarity of the antenna.
+    sewReceiverStatusObject:
+      type: object
+      properties:
+        lastUpdateTime:
+          type: string
+          description: Timestamp when this receiver status was last updated.
+        staleState:
+          type: string
+          enum:
+          - FRESH
+          - STALE
+          description: Fresh/stale state flag.   This receiver status is 'stale' if the 
+            receiver has not reported status since this SEW system was restarted.
+        channelId:
+          type: string
+          description: The SEW system receiver channel identifier.
+        centerFrequency:
+          type: number
+          description: The receiver center frequency, in MHz.
+    sewTransmitterStatusObject:
+      type: object
+      properties:
+        lastUpdateTime:
+          type: string
+          description: Timestamp when this transmitter status was last updated.
+        staleState:
+          type: string
+          enum:
+          - FRESH
+          - STALE
+          description:  Fresh/stale state flag. This transmitter status is 'stale' if the 
+            transmitter has not reported status since this SEW system was restarted.
+        transmitterId:
+          type: string
+          description: The SEW system transmitter Identifier.
+        isTransmitting:
+          type: boolean
+          description: Flag to indicate whether the transmitter is transmitting (True).
+        status:
+          type: string
+          enum:
+          - NEW
+          - DELTA
+          description: Transmitter status, indicating whether the last update was a NEW 
+            state,  i.e., transmitter off/on, or a change (DELTA) to transmitter settings 
+            after the transmitter was already enabled.
+        targetSatellite:
+          type: string
+          description: Target satellite at the time of this transmitter event.
+    sewSystemHealthObject:
+      type: object
+      properties:
+        overallHealthState:
+          $ref: "#/components/schemas/sewSystemHealthState"
+        lastBitTime:
+          type: string
+          description: Timestamp of the last SEW System built-in-test.
+        lastBitResult:
+          type: string
+          enum:
+          - PASS
+          - FAIL
+          - UNKNOWN
+          description: Status of the last built-in-test.
+        lastBitFailureSummary:
+          type: array
+          description: An array of reasons why the last built-in-test was considered a 
+            failure (as indicated by the lastBitResult field).
+          items:
+            type: string
+        hardwareHealth:
+          description: Health/Status of the hardware components.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+        softwareHealth:
+          description: Health/Status of the software.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+        connectionHealth:
+          description: Health/Status of the connectivity.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+        functionalHealth:
+          description: Health/Status of the overall functionality.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+        powerHealth:
+          description: Health/Status of the power.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+        serverHealth:
+          description: Health/Status of the software servers.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+        environmentalHealth:
+          description: Health/Status of the environmentals.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+        securityHealth:
+          description: Health/Status of the security.
+          $ref: "#/components/schemas/sewSystemHealthItemDataObject"
+    sewSystemConfigurationObject:
+      type: object
+      properties:
+        lastUpdateTime:
+          type: string
+          description: Last configuration update time.
+        staleState:
+          type: string
+          enum:
+          - FRESH
+          - STALE
+          description: Fresh/stale state flag. This configuration is 'stale' if the 
+            configuration has not been updated since this SEW system was restarted.
+        diagnosticMode:
+          type: string
+          enum:
+          - MAINTENANCE
+          - TEST
+          - NONE
+          - UNKNOWN
+          description: SEW diagnostic mode, indicating if this SEW system is in 
+            MAINTENANCE, running its Built-In TEST, or in operations (NONE).
+        securityMode:
+          type: string
+          enum:
+          - ARMED
+          - DISARMED
+          - UNKNOWN
+          description: SEW system security state.
+        securityAlertMode:
+          type: string
+          enum:
+          - SHUTDOWN
+          - ZEROIZE
+          - UNKNOWN
+          description: SEW system alert security state.  This is the action the SEW 
+            system will take if a SecurityAlert occurs when the Security Mode is ARMED.
+        reportingMode:
+          type: string
+          enum:
+          - NORMAL
+          - QUIET
+          - UNKNOWN
+          description: SEW system reporting mode.  In quiet mode, the SEW system will 
+            send fewer events.
+        missionMode:
+          type: string
+          enum:
+          - AUTO
+          - MANUAL
+          - UNKNOWN
+          description: SEW system mission mode.
+        commLossMode:
+          type: string
+          enum:
+          - CONTINUE
+          - CEASE_TRANSMISSIONS
+          - ZEROIZE
+          - UNKNOWN
+          description: SEW system comm loss mode.
+        commLossWaitTime:
+          type: integer
+          description: The time to wait (in seconds) before executing the specified 
+            commLossMode actions.
+        heartbeatMode:
+          type: string
+          enum:
+          - RANDOM
+          - INTERVAL
+          - UNKNOWN
+          description: SEW system heartbeat reporting mode.
+        gpsDeniedMode:
+          type: string
+          enum:
+          - ENABLED
+          - DISABLED
+          - UNKNOWN
+          description: Flag to indicate if this SEW system is configured for GPS-Denied Mode.
+        heartbeatInterval:
+          type: integer
+          description: SEW system heartbeat interval in seconds.
+        bitInterval:
+          type: integer
+          description: SEW system Built-In-Test interval in hours.
+    sewSystemHealthItemDataObject:
+      type: object
+      properties:
+        lastUpdateTime:
+          type: string
+          description: Last health status update time.
+        staleState:
+          type: string
+          enum:
+          - FRESH
+          - STALE
+          description: Fresh/stale state flag. This health status is 'stale' if the health 
+            status has not been updated since this SEW system was restarted.
+        healthState:
+          $ref: "#/components/schemas/sewSystemHealthState"
+        message:
+          type: string
+          description: Last reported alarm, warning, or event message.  The message may 
+            include the action taken, warning/critical thresholds, and other insights provided 
+            by the SEW system.
+        statusInterval:
+          type: integer
+          description: The configured status interval for this health check.  This item may 
+            be reported stale if it has not been updated within this status interval.
+    sewSystemHealthState:
+      type: string
+      enum:
+      - CRITICAL
+      - WARNING
+      - OPTIMAL
+      - UNKNOWN
+      description: Overall SEW System Health is based on the last built-in test result and 
+        the last known health states, without regard for whether the info is fresh or stale.

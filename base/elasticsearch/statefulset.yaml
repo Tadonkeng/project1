@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+spec:
+  serviceName: elasticsearch
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1337
+      initContainers:
+      - name: add-aws-keys
+        image: registry1.dso.mil/ironbank/elastic/elasticsearch/elasticsearch:8.10.3
+        envFrom:
+        - configMapRef:
+            name: cluster-prefix
+        - secretRef:
+            name: minio-app-keys
+        - secretRef:
+            name: minio-connect-info
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: $(accesskey)
+        - name: MINIO_SECRET_KEY
+          value: $(secretkey)
+        command:
+        - sh
+        - -c
+        - |
+          echo $MINIO_ACCESS_KEY | bin/elasticsearch-keystore add --stdin --force s3.client.default.access_key
+          echo $MINIO_SECRET_KEY | bin/elasticsearch-keystore add --stdin --force s3.client.default.secret_key
+          cp -r /usr/share/elasticsearch/config/* /tmp/elastic-config-dir/
+          bin/elasticsearch-keystore list
+        volumeMounts:
+        - name: keystore
+          mountPath: /tmp/elastic-config-dir
+      containers:
+      - name: elasticsearch
+        image: registry1.dso.mil/ironbank/elastic/elasticsearch/elasticsearch:8.10.3
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: node.name
+          value: "elasticsearch"
+        - name: cluster.initial_master_nodes
+          value: "elasticsearch"
+        - name: xpack.security.enabled
+          value: "false"
+        - name: S3_BUCKET_UUID
+          value: $(appS3BucketUUID)
+        - name: MINIO_HOST
+          value: $(host)
+        - name: MINIO_PORT
+          value: $(port)
+        - name: MINIO_PROTOCOL
+          value: $(protocol)
+        - name: MINIO_ACCESS_KEY
+          value: $(accesskey)
+        - name: MINIO_SECRET_KEY
+          value: $(secretkey)
+        - name: MINIO_BUCKET_NAME
+          value: minio-$(NAMESPACE)-$(CLUSTER_PREFIX)-$(S3_BUCKET_UUID)
+        - name: MINIO_REGION
+          value: us-gov-west-1
+        - name: MINIO_ENDPOINT_URL
+          value: $(protocol)://$(host):$(port)
+        envFrom:
+        - configMapRef:
+            name: cluster-prefix
+        - secretRef:
+            name: minio-app-keys
+        - secretRef:
+            name: minio-connect-info
+        volumeMounts:
+        - name: sts-pvc
+          mountPath: /usr/share/elasticsearch/data
+        - name: keystore
+          mountPath: /usr/share/elasticsearch/config
+        - name: post-start-logs
+          mountPath: /tmp/post-start
+          # Remove elasticsearch configmap till we have it finalized
+          # - name: config
+          #   mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          #   subPath: elasticsearch.yml
+        - name: post-start
+          mountPath: /usr/share/elasticsearch/config/scripts
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/bash", "-c", "/usr/share/elasticsearch/config/scripts/post-start-script.sh"]
+        resources:
+          limits:
+            cpu: 8000m
+            memory: 12Gi
+          requests:
+            cpu: 2000m
+            memory: 8Gi
+      - name: post-start-logs
+        image: registry1.dso.mil/ironbank/elastic/elasticsearch/elasticsearch:8.10.3
+        command:
+        - /bin/bash
+        - -exc
+        - |
+          sleep 30;
+          tail -F /tmp/post-start/post-start.txt
+        volumeMounts:
+        - name: post-start-logs
+          mountPath: /tmp/post-start
+      volumes:
+      - name: keystore
+        emptyDir: {}
+        # Remove elsaticsearch.yml configmap till we have it finalized
+        #- name: config
+        #  configMap:
+        #    name: elasticsearch-config
+      - name: post-start
+        configMap:
+          name: post-start-scripts
+          defaultMode: 0777
+      - name: post-start-logs
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: sts-pvc
+    spec:
+      accessModes:
+      - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 250Gi

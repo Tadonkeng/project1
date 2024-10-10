@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coi-web
+spec:
+  revisionHistoryLimit: 1
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      imagePullSecrets:
+        - name: code-il5-pull-creds
+      containers:
+        - name: coi-web
+          image: sewol/coi-web
+          imagePullPolicy: Always

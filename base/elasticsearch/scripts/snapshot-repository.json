@@ -1,0 +1,10 @@
+{
+  "type": "s3",
+  "settings": {
+    "bucket": "minio-sewol-il5-mission-staging-hsh9lzyj7lmomke2",
+    "protocol": "http",
+    "endpoint": "http://minio.minio:9000",
+    "region": "us-gov-west-1",
+    "path_style_access": "true"
+  }
+} 
