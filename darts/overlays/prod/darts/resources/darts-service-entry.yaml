@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: darts-se
+spec:
+  resolution: DNS
+  hosts:
+  - "test.unifieddatalibrary.com"
+  - "unifieddatalibrary.com"
+  exportTo:
+  - "."
+  ports:
+  - name: https
+    number: 443
+    protocol: HTTPS
+  location: MESH_EXTERNAL

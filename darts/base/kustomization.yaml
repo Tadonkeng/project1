@@ -1,0 +1,13 @@
+namespace: darts
+
+resources:
+  - resources/namespace.yaml
+  - resources/limitrange.yaml
+  - ../../plugins/auth_policies/
+  - ../../plugins/network_policies/
+  - ../../plugins/limitrange/
+
+patchesStrategicMerge:
+  - resources/auth-policy-patch.yaml
+  - resources/net-policy-patch.yaml
+

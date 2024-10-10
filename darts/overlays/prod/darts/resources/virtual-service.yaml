@@ -1,0 +1,51 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: darts
+spec:
+  hosts:
+    - "darts-mission.odin.dso.mil"
+  gateways:
+    - istio-system/public
+#    - istio-system/e2e
+  http:
+    - match:
+        - uri:
+            prefix: /oauth
+      route:
+        - destination:
+            host: darts-frontend.darts.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /backend/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: darts-backend.darts.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /keeptrack/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: darts-keeptrack-space.darts.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /frontend/
+        - uri:
+            prefix: /
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: darts-frontend.darts.svc.cluster.local
+            port:
+              number: 80

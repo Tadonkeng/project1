@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: mongo
+  namespace: c3po
+spec:
+  hosts:
+  - mongodb
+  ports:
+  - number: 27017
+    name: mongo
+    protocol: TCP
+  location: MESH_INTERNAL
+  resolution: DNS
+  endpoints:
+  - address: mongodb

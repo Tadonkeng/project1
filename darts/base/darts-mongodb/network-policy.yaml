@@ -1,0 +1,13 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: internal-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      k8s_app: c3po
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: c3po

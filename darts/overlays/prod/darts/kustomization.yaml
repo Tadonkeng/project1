@@ -1,0 +1,7 @@
+namespace: darts
+resources:
+  - resources/virtual-service.yaml
+#  - resources/darts-service-entry.yaml
+components:
+  - ../../../../cluster-secrets/overlays/prod/minio-connect-info/
+  - ../secrets/

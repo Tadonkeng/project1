@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: darts-backend
+spec:
+    template:
+        spec:
+            containers:
+                - name: darts-backend
+                  image: darts/darts-backend
+                  imagePullPolicy: Always
+                  envFrom:
+                      - configMapRef:
+                            name: app-name
+                      - secretRef:
+                            name: app-db-credentials
+# Not needed no postgres DB, keeping for now
+#                      - secretRef:
+#                            name: postgres-connect-info
+                      - configMapRef:
+                            name: cluster-prefix
+                      - secretRef:
+                            name: minio-app-keys
+                      - secretRef:
+                            name: minio-connect-info
+                      - secretRef:
+                            name: mongo-creds
+                  env:
+                      - name: NODE_ENV
+                        value: development
+                      - name: S3_BUCKET_UUID
+                        value: $(appS3BucketUUID)
+                      - name: MINIO_HOST
+                        value: $(host)
+                      - name: MINIO_PORT
+                        value: $(port)
+                      - name: MINIO_PROTOCOL
+                        value: $(protocol)
+                      - name: MINIO_ACCESS_KEY
+                        value: $(accesskey)
+                      - name: MINIO_SECRET_KEY
+                        value: $(secretkey)
+                      - name: MINIO_BUCKET_NAME
+                        value: minio-$(APP_NAME)-$(CLUSTER_PREFIX)-$(S3_BUCKET_UUID)
+                      - name: MINIO_REGION
+                        value: us-gov-west-1
+                      - name: MINIO_ENDPOINT_URL
+                        value: $(protocol)://$(host):$(port)
+                      - name: UDL_URL
+                        value: https://unifieddatalibrary.com
+                      - name: CLAM_AV_HOST
+                        value: clamd.clamav
+                      - name: CLAM_AV_PORT
+                        value: "3310"
+                  volumeMounts:
+                    - mountPath: /etc/clamav/clamd.conf
+                      subPath: clamd.conf
+                      name: clamd-conf
+            volumes:
+              - name: clamd-conf
+                configMap:
+                  name: clamd-conf
+
+

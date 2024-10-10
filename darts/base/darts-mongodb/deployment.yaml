@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: mongodb
+spec:
+    strategy:
+        type: Recreate
+    template:
+        spec:
+            securityContext:
+                fsGroup: 1337
+            containers:
+                - name: mongodb
+                  image: mongodb
+                  imagePullPolicy: "IfNotPresent"
+                  securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 1337
+                  envFrom:
+                      - secretRef:
+                            name: mongo-creds
+                  env:
+                      - name: MONGODB_SYSTEM_LOG_VERBOSITY
+                        value: "0"
+                      - name: MONGODB_DISABLE_SYSTEM_LOG
+                        value: "no"
+                      - name: MONGODB_ENABLE_IPV6
+                        value: "no"
+                      - name: MONGODB_ENABLE_DIRECTORY_PER_DB
+                        value: "no"
+                  ports:
+                      - name: mongo
+                        containerPort: 27017
+                  livenessProbe:
+                      tcpSocket:
+                          port: 27017
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                      timeoutSeconds: 5
+                      successThreshold: 1
+                      failureThreshold: 6
+                  readinessProbe:
+                      tcpSocket:
+                          port: 27017
+                      initialDelaySeconds: 25
+                      periodSeconds: 10
+                      timeoutSeconds: 5
+                      successThreshold: 1
+                      failureThreshold: 6
+                  volumeMounts:
+                      - name: data
+                        mountPath: /data/db
+                      - name: mongodconf
+                        mountPath: /etc/mongod.conf
+                        subPath: mongod.conf
+            volumes:
+                - name: data
+                  persistentVolumeClaim:
+                      claimName: mongodb
+                - name: mongodconf
+                  configMap:
+                      name: mongodconf

@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/8
+        value:
+          name: MINIO_REGION
+          value: us-gov-west-1
+    target:
+      kind: Deployment
+      name: darts-backend
+
+images:
+- name: darts/darts-backend
+  newName: registry.il4.dso.mil/spacecamp/delta4/darts/backend
+  newTag: "1.8.0"
+- name: darts/darts-frontend
+  newName: registry.il4.dso.mil/spacecamp/delta4/darts/frontend
+  newTag: "1.8.1"
+- name: mongodb
+  newName: registry1.dso.mil/ironbank/opensource/mongodb/mongodb
+  newTag: "6.0.5"

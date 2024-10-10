@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: darts-frontend
+spec:
+  template:
+    spec:
+      containers:
+      - name: darts-frontend
+        image: darts/darts-frontend
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          name: nginx
+      volumes:
+      - name: nginx
+        configMap:
+          name: darts-nginx-config

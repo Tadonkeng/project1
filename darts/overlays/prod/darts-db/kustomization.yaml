@@ -1,0 +1,21 @@
+namespace: darts-db
+resources:
+  - resources/namespace.yaml
+  - ../../../../plugins/auth_policies/
+  - ../../../../plugins/network_policies_db/
+
+components:
+  # Secrets 
+#  - ../../../../cluster-secrets/overlays/prod/db-admin-secrets/
+  - ../secrets/
+
+  # Minio
+  - ../../../../plugins/minio_provisioner/
+  - ../../../../cluster-secrets/overlays/prod/minio-admin-secrets/  
+  - ../../../../cluster-secrets/overlays/prod/minio-connect-info/
+
+  # DB
+#  - ../../../../plugins/db_provisioner/ 
+
+patchesStrategicMerge:
+  - resources/auth-policy-patch.yaml

@@ -1,0 +1,9 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: darts
+  labels:
+    istio-injection: enabled
+    organization: spacecamp-delta4
+    product: darts
+    name: darts
