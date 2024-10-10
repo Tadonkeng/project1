@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pedestal-nlp
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      containers:
+      - name: pedestal-nlp
+        image: odin-high/pedestal-nlp
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 2
+            memory: 5Gi
+          requests:
+            cpu: 1
+            memory: 4Gi
+        workingDir: /app
+        ports:
+        - name: nlp
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /
+            port: nlp
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 4
+        startupProbe:
+          httpGet:
+            path: /
+            port: nlp
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        envFrom:
+        - configMapRef:
+            name: tiger-ranch-env
+        - secretRef:
+            name: app-db-credentials
+        - secretRef:
+            name: postgres-connect-info
+        - configMapRef:
+            name: app-name
+        - secretRef:
+            name: minio-app-keys
+        - secretRef:
+            name: minio-connect-info
+        - configMapRef:
+            name: minio-s3-bucket
+        env:
+        - name: MINIO_ENDPOINT_URL
+          value: $(protocol)://$(host).svc.cluster.local:$(port)

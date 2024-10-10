@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  labels:
+    name: rabbitmq
+spec:
+  ports:
+  - port: 5672
+    protocol: TCP
+    targetPort: rabbitmq
+    name: amqp-rabbitmq
+  - port: 80
+    protocol: TCP
+    targetPort: management
+    name: http-rabbitmq-admin

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: document-parser
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      containers:
+      - name: document-parser
+        image: odin-high/document-parser
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1
+            memory: 4Gi
+          requests:
+            cpu: 0.5
+            memory: 3Gi # This value should be around 75% of the limit based on JAVA_TOOL_OPTIONS env var
+        workingDir: /app
+        ports:
+        - name: health
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: health
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 4
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: health
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 12
+        envFrom:
+        - configMapRef:
+            name: tiger-ranch-env
+        - configMapRef:
+            name: cluster-prefix
+        - secretRef:
+            name: app-db-credentials
+        - secretRef:
+            name: postgres-connect-info
+        - configMapRef:
+            name: app-name
+        - secretRef:
+            name: minio-app-keys
+        - secretRef:
+            name: minio-connect-info
+        - configMapRef:
+            name: minio-s3-bucket
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: -XX:+PrintFlagsFinal -XX:MaxRAMPercentage=75.0
+        - name: MINIO_S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-app-keys
+              key: accesskey
+        - name: MINIO_S3_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-app-keys
+              key: secretkey
+        - name: MINIO_S3_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: minio-s3-bucket
+              key: S3_REGION
+        - name: RABBIT_USER
+          valueFrom:
+            secretKeyRef:
+              key: RABBITMQ_DEFAULT_USER
+              name: rabbitmq-creds
+        - name: RABBIT_PASS
+          valueFrom:
+            secretKeyRef:
+              key: RABBITMQ_DEFAULT_PASS
+              name: rabbitmq-creds
+        - name: RABBIT_QUEUE_URL
+          value: "amqp://$(RABBIT_USER):$(RABBIT_PASS)@$(RABBIT_HOSTNAME):$(RABBIT_PORT)"

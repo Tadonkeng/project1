@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  serviceName: elasticsearch
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1337
+      containers:
+      - name: elasticsearch
+        image: elasticsearch
+        imagePullPolicy: IfNotPresent
+        command: ["/usr/share/elasticsearch/bin/elasticsearch"]
+        env:
+        - name: discovery.type
+          value: "single-node"
+        - name: ingest.geoip.downloader.enabled
+          value: "false"
+        - name: xpack.security.enabled
+          value: "false"
+        - name: indices.id_field_data.enabled
+          value: "true"
+        resources:
+          limits:
+            cpu: 2
+            memory: 2.0Gi
+          requests:
+            cpu: 1
+            memory: 1.5Gi # ES will use about 65-70% of its limit so this value should be near the limit
+        ports:
+        - name: es
+          containerPort: 9200
+        livenessProbe:
+          httpGet:
+            path: /_cluster/health?local=true
+            port: es
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        startupProbe:
+          httpGet:
+            path: /_cluster/health?local=true
+            port: es
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 12
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: elasticsearch

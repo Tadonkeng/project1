@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- elasticsearch/
+- celery-worker/
+- document-parser/
+- pedestal-api/
+- pedestal-nlp/
+- pedestal-ui/
+- rabbitmq/
+
+labels:
+- includeSelectors: true
+  pairs:
+    authentication: istio-auth
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- literals:
+  - STATUS_URLS=http://pedestal-ui,http://pedestal-api,http://celery-worker,http://pedestal-nlp,http://document-parser
+  name: status-check-env
+- literals:
+  - APP_NAME=tiger-ranch
+  - ELASTICSEARCH_URL="http://elasticsearch:9200"
+  - ELASTICSEARCH_HOSTNAME="elasticsearch"
+  - ELASTICSEARCH_PORT="9200"
+  - RABBIT_HOSTNAME="rabbitmq"
+  - RABBIT_PORT="5672"
+  - PEDESTAL_ENDPOINT="http://pedestal-api/api/graphql"
+  - DOCUMENT_QUEUE_NAME="pedestal_documents"
+  - NLP_SERVICE_URL="http://pedestal-nlp"
+  - CELERY_RESULT_BACKEND="rpc://"
+  name: tiger-ranch-env

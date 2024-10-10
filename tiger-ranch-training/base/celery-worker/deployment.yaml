@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      containers:
+      - name: celery-worker
+        image: odin-high/pedestal-api
+        command: ["/app/entrypoint_celery.sh"]
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 1.0
+            memory: 4Gi
+          requests:
+            cpu: 0.5
+            memory: 2Gi
+        workingDir: /app
+        ports:
+        - name: api
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: api
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 4
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: api
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 12
+        envFrom:
+        - configMapRef:
+            name: status-check-env
+        - configMapRef:
+            name: tiger-ranch-env
+        - configMapRef:
+            name: cluster-prefix
+        - secretRef:
+            name: app-db-credentials
+        - secretRef:
+            name: postgres-connect-info
+        - configMapRef:
+            name: app-name
+        - secretRef:
+            name: minio-app-keys
+        - secretRef:
+            name: minio-connect-info
+        - configMapRef:
+            name: minio-s3-bucket
+        env:
+        - name: MINIO_S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-app-keys
+              key: accesskey
+        - name: MINIO_S3_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-app-keys
+              key: secretkey
+        - name: MINIO_S3_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: minio-s3-bucket
+              key: S3_REGION
+        - name: RABBIT_USER
+          valueFrom:
+            secretKeyRef:
+              key: RABBITMQ_DEFAULT_USER
+              name: rabbitmq-creds
+        - name: RABBIT_PASS
+          valueFrom:
+            secretKeyRef:
+              key: RABBITMQ_DEFAULT_PASS
+              name: rabbitmq-creds
+        - name: RABBIT_QUEUE_URL
+          value: "amqp://$(RABBIT_USER):$(RABBIT_PASS)@$(RABBIT_HOSTNAME):$(RABBIT_PORT)"
+        - name: RABBIT_MGMT_PORT
+          value: "80"
+        - name: PG_PASS
+          valueFrom:
+            secretKeyRef:
+              key: APP_DB_ADMIN_PASSWORD
+              name: app-db-credentials
+        - name: DATABASE_URL
+          value: "postgresql://$(PG_USER):$(PG_PASS)@$(PGHOST):$(PGPORT)/$(PG_DATABASE)"
+        - name: TMPDIR
+          value: "/tmpdir"
+        volumeMounts:
+        - mountPath: /tmpdir
+          name: tmpdir-volume
+      volumes:
+      - name: tmpdir-volume
+        emptyDir: {}

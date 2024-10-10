@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+labels:
+- includeSelectors: true
+  pairs:
+    name: tiger-ranch
+
+resources:
+- ../../base
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- behavior: merge
+  literals:
+  - BASE_URL=https://pedestal-training.odin.dso.smil.mil/
+  name: tiger-ranch-env
+
+patches:
+- path: patches/celery-worker-deployment-patch.yaml
+- path: patches/document-parser-deployment-patch.yaml
+- path: patches/pedestal-api-deployment-patch.yaml
+
+# Convert `registry.il4` to `registry1` for Deployment on ODIN
+images:
+- name: elasticsearch
+  newName: registry1.dso.mil/ironbank/elastic/elasticsearch/elasticsearch
+  newTag: 8.12.2
+- name: odin-high/document-parser
+  newName: registry1.dso.mil/odin-high/tiger-ranch/document-parser
+  newTag: 3.7.0
+- name: odin-high/pedestal-api
+  newName: registry1.dso.mil/odin-high/tiger-ranch/pedestal-api
+  newTag: 3.23.0
+- name: odin-high/pedestal-nlp
+  newName: registry1.dso.mil/odin-high/tiger-ranch/pedestal-nlp
+  newTag: 3.13.0
+- name: odin-high/pedestal-ui
+  newName: registry1.dso.mil/odin-high/tiger-ranch/pedestal-ui
+  newTag: 3.24.0
+- name: rabbitmq
+  newName: registry1.dso.mil/ironbank/pivotal/rabbitmq/rabbitmq310-management
+  newTag: 3.10.25-management

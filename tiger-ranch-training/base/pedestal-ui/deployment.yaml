@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pedestal-ui
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    spec:
+      terminationGracePeriodSeconds: 15
+      containers:
+      - name: pedestal-ui
+        image: odin-high/pedestal-ui
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 0.5
+            memory: 256Mi
+          requests:
+            cpu: 0.1
+            memory: 64Mi
+        ports:
+        - name: nginx
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health/status
+            port: nginx
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        startupProbe:
+          httpGet:
+            path: /health/status
+            port: nginx
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        envFrom:
+        - configMapRef:
+            name: tiger-ranch-env
+        - secretRef:
+            name: app-db-credentials
+        - secretRef:
+            name: postgres-connect-info
+        - configMapRef:
+            name: app-name
+        - secretRef:
+            name: minio-app-keys
+        - secretRef:
+            name: minio-connect-info
+        - configMapRef:
+            name: minio-s3-bucket
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: API_HOST
+          value: pedestal-api.$(NAMESPACE).svc.cluster.local
+        - name: NLP_HOST
+          value: pedestal-nlp.$(NAMESPACE).svc.cluster.local
+        - name: MINIO_ENDPOINT_URL
+          value: $(protocol)://$(host).svc.cluster.local:$(port)

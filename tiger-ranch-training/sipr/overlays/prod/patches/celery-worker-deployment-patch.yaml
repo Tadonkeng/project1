@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+spec:
+  template:
+    spec:
+      containers:
+      - name: celery-worker
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MINIO_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: accesskey
+              name: minio-app-keys
+        - name: MINIO_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secretkey
+              name: minio-app-keys
+        - name: S3_BUCKET_UUID
+          valueFrom:
+            secretKeyRef:
+              key: appS3BucketUUID
+              name: minio-app-keys
+        - name: MINIO_ENDPOINT_URL
+          value: http://minio.minio.svc.cluster.local:9000
+        - name: MINIO_BUCKET_NAME
+          value: minio-$(NAMESPACE)-$(CLUSTER_PREFIX)-$(S3_BUCKET_UUID)
+        - name: MINIO_S3_BUCKET
+          value: $(MINIO_BUCKET_NAME)
+        - name: FILESTORE_URL
+          value: "$(MINIO_ENDPOINT_URL)"
