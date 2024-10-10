@@ -1,0 +1,12 @@
+kubectl run postgresql-postgresql-client --rm --tty -i --restart='Never' --namespace tiger-ranch --image ironbank/opensource/postgres/postgresql11:11.10 -- /bin/bash
+
+psql -U dbadmin -h odin-mission-prod-tiger-ranch.cw6rjfsquece.us-gov-west-1.rds.amazonaws.com -d tigerranchdb
+
+\l   lists all the databases
+\dt  lists the relations
+\c tigerranch_db takes you to a specific database (in this case tigerranch_db) 
+
+SELECT id, preferred_username, _authorizations FROM users WHERE preferred_username = 'jotad';
+
+UPDATE users SET _authorizations = '["ADMIN"]' WHERE preferred_username = 'jotad';
+
