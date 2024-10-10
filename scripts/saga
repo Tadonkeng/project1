@@ -1,0 +1,306 @@
+#!/bin/bash
+#set -x
+############################
+#
+# Saga - is a utility script that provides shorthand commands and aliases
+#  for administering and troubleshooting an ODIN based kubernetes deployment
+#
+# check_environment - a function that does basic validation of command line utilities used by functions here.
+#   This function will warn of any missing utilities to std err. This WILL not stop operation of the script or
+#   output anything to std out.
+#
+# Guide for adding a command to saga
+# 1) Any command line utilities used MUST be checked(for existance) for in the check_environment function
+# 2) Any command added to the list should validate any requirements before running and error out if there
+#     is a problem 
+# 3) To add a command ex.  'saga show stuff'
+# 3.1) check check_environment and add any needed utilities 
+# 3.2) Add the command to the case statement and add a function with the name "show_stuff" (based on the options)
+# 3.3) Write your function(should be atonomous) - side effect free, clean up any temp files
+# 3.4) If you have a bash alias you want for your command add it to configure_aliases
+
+
+#  source /usr/local/bin/fluxreconcile.sh
+if [[ -e '/usr/local/bin/fluxreconcile.sh' ]]; then
+  source /usr/local/bin/fluxreconcile.sh
+elif [[ -e './fluxreconcile.sh'  ]]; then
+  source ./fluxreconcile.sh
+else
+   echo 'Could not find fluxreconcile in "/usr/local/bin" or in "."'  >&2
+fi
+
+VERSION=2
+
+#
+# Setup Colors for Warnings
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+configure_aliases () {
+  echo "alias k=\"kubectl\""
+}
+
+configure_other () {
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+  echo "source <(kubectl completion bash)"
+else
+  echo -e "${RED}WARNING:${NC} Kubernetes bash completion missing dependency, 'sudo yum -y install bash-completion'" >&2
+  echo -e "run the following after installation" >&2
+  echo -e "'source <(kubectl completion bash)'" >&2
+fi
+}
+
+configure_backup () {
+    velero version >&2 /dev/null
+    if [ $? -ne 0 ] ; then
+        echo 'velero command not found'
+        exit 1
+    fi
+    if [ $# -ne 1 ] ; then
+     echo 'Must Specify Namespace to backup'
+     exit 1
+    fi
+    kubectl get ns $1 >&2
+    if [ $? -ne 0 ]; then
+      print "Failed to setup backups namespace $1 not found"
+      exit 1
+    fi
+    velero create schedule $1-weekly --schedule="@every 1w" --include-namespaces $1 --ttl 672h
+    velero create schedule $1-daily  --schedule="@every 1d" --include-namespaces $1 --ttl 168h
+    velero create schedule $1-l3h    --schedule="@every 1h" --include-namespaces $1 --ttl 3h
+}
+
+
+
+check_istio () {
+istioctl analyze -n istio-system
+}
+
+check_backup_namespaces () {
+ velero describe schedules | grep Included | grep -v \* | awk '{ print $2}' | sort -u > /tmp/cbn_temp_1
+ kubectl get ns | grep -v AGE | awk '{ print $1}' > /tmp/cbn_temp_2
+ echo "backups are not configured for the following namespaces"
+ sdiff -s /tmp/cbn_temp_1 /tmp/cbn_temp_2 | awk '{ print $2}'
+ rm /tmp/cbn_temp_1 /tmp/cbn_temp_2
+}
+
+
+# Check certificates stored by kubernetes for the expiration times
+check_certificates() { 
+ # Check each of the following locations for certificates
+ # to add a place to look, call the helper function with the namespace and secret name
+ # if the data is stored in a strange location specify the key to look for.
+ check_certificates_helper istio-system istio-ingressgateway-certs '{.data.tls\.crt}'
+ check_certificates_helper istio-system wildcard-cert '{.data.tls\.crt}'
+ check_certificates_helper keycloak keycloak-mtls '{.data.tls\.crt}'
+}
+
+check_certificates_helper() {
+echo "Checking $1 $2 $3"
+DATA=`kubectl get secrets -n $1 $2 -o jsonpath=$3 2> /dev/null`
+
+if [ -z "$DATA" ] ; then
+ echo "  Empty"
+ return
+fi
+
+echo $DATA | base64 -d > /tmp/crt
+openssl x509 -noout -text -nameopt multiline -in /tmp/crt | grep "commonName\|Not After" | tail -2
+rm /tmp/crt
+}
+
+check_command () {
+ $1 > /dev/null 2>&1
+ if [ "$?" -ne 0 ] ; then
+  echo -e $2 >&2
+ fi
+}
+
+check_environment () {
+ check_command 'istioctl -h' "${RED}WARNING:${NC} istioctl not found"
+ check_command 'kubectl' "${RED}WARNING:${NC} kubectl not found"
+ check_command 'jq --help' "${RED}WARNING:${NC} jq not found"
+ check_command 'yq -v' "${RED}WARNING:${NC} yq not found"
+# check_command 'velero version' "${RED}WARNING:${NC} velero not found"
+ check_command 'flux --version' "${RED}WARNING:${NC} flux not found"
+}
+
+
+check_new_version () {
+  if [ -f /usr/local/bin/saga ] && [ -f /bootstrap/scripts/saga ] ; then
+    TS1=`stat -c %Y /bootstrap/scripts/saga`
+    TS2=`stat -c %Y /usr/local/bin/saga`
+    if [ "$TS1" -gt "$TS2" ] ; then
+	echo -e 'There is a newer version of saga available.' >&2
+        echo -e 'sudo cp /bootstrap/scripts/saga /usr/local/bin' >&2
+    fi
+  fi
+}
+
+
+show_bigbang_config_content () {
+Y_FILES=`kubectl get secret -n bigbang values -o yaml | yq r - data | awk -F: '{ print $1}'`
+if [ $1 != "" ] ; then
+Y_FILES=$1
+fi
+
+for F in $Y_FILES ; do
+CONTENT=`kubectl get secret -n bigbang values -o yaml | yq r - data.[$F] | base64 -d`
+if [ $? ] ; then
+echo -e "${GREEN}$F${NC}"
+echo -e "$CONTENT"
+fi
+done
+}
+
+show_bigbang_config_summary () {
+Y_FILES=`kubectl get secret -n bigbang values -o yaml | yq r - data | awk -F: '{ print $1}'`
+
+for F in $Y_FILES ; do
+CONTENT=`kubectl get secret -n bigbang values -o yaml | yq r - data.[$F] | base64 -d`
+
+echo -e "$CONTENT" | yq v -
+if [ $? -eq 0 ]; then
+STATUS=Valid
+else
+STATUS=Invalid
+fi
+
+LINES=`echo -e "$CONTENT" | wc -l`
+
+echo "$F: $STATUS $LINES Lines"
+done
+
+}
+
+show_dockerregistry () {
+AA=`curl -s http://p1-registry:5000/v2/_catalog?n=999 | jq '.repositories | .[]' | sed s/\"//g`
+#echo $AA
+for THING in $AA ; do
+echo -n $THING" "
+curl -s http://p1-registry:5000/v2/$THING/tags/list | jq ' .tags | .[]' | sed s/\"//g | awk '{printf "%s ",$0} END {print " "}'
+done
+}
+
+# Command to show all container images in the default cluster
+show_images () {
+  kubectl get pods -A -o=custom-columns='DATA:spec.containers[*].image'
+}
+
+show_usage () {
+ echo -e "Usage: saga command subcommand option"
+ echo -e "[] optional arguments in square brackets"
+ echo -e "<> required arguments in angle brackets"
+ echo -e "Command Summary:"
+
+ printf "\tcheck\n"
+ printf "%25s\t%s\n" "backup" "Check Namespaces to make sure velero backups are setup"
+ printf "%25s\t%s\n" "certificates" "Get certificates from common locations and print their name/expiration"
+ printf "%25s\t%s\n" "istio" "Check Status of istio"
+
+ printf "\tconfigure\n"
+ printf "%25s\t%s\n" "aliases" "Output alias commands that will be sourced by bash"
+ printf "%25s\t%s\n" "other" "Output any other shell configuration(aside from aliases) to be sourced by bash"
+ printf "%25s\t%s\n\t\t\t\t%s\n" "backup" "<namespace>" "Configure the standard velero backup set for the given namespace"
+
+ printf "\tshow\n"
+ printf "%25s\t%s\n" "dockerregistry" "Query the docker registry running at p1-registry for images and tags"
+ printf "%25s\t%s\n" "images" "Query the kubernetes cluster for all images in use."
+ printf "%25s\t%s\n" "bigbang" 
+ printf "\t\t\t%s\n" "config content <something.yaml> Show all yaml stored in the bigbang secret, or the specified yaml key"
+ printf "\t\t\t%s\n" "config summary    Validate and summarize the yalm stored in the bigband secret"
+
+ printf "\tpassword\n"
+ printf "%25s\t%s\n" "argocd" "Reset the password for the argocd admin, will redeploy the pod"
+
+ printf "\n\t%s %s\n\t\t\t\t%s\n" "reconcile" "[deployment]" "If no deployment is given all deployments will be reconciled in dependency order."
+}
+
+check_environment
+check_new_version
+
+case $1 in
+check)
+    case $2 in
+    backup)
+        check_backup_namespaces
+    ;;
+    certificates)
+        check_certificates
+    ;;
+    istio)
+        check_istio
+    ;;
+    esac
+;;
+configure|config)
+    case $2 in
+
+    aliases)
+        configure_aliases
+    ;;
+    other)
+        configure_other
+    ;;
+    backup)
+        configure_backup $3
+    ;;
+    *)
+       echo "no command found"
+    ;;
+    esac 
+;;
+show)
+    case $2 in
+    bigbang)
+        case $3 in
+        config)
+             case $4 in
+             content)
+               show_bigbang_config_content $5
+             ;;
+             summary)
+               show_bigbang_config_summary
+             ;;
+             esac
+        ;;
+        esac
+    ;;
+    dockerregistry)
+        show_dockerregistry
+    ;;
+    images)
+        show_images
+    ;;
+    version)
+	echo $VERSION
+        exit 0
+    ;;
+    esac
+;;
+reconcile)
+    reconcile $2
+;;
+password)
+  case $2 in
+  argocd)
+    case $3 in
+      reset)
+        kubectl patch secret argocd-secret -n argocd -p '{"data": {"admin.password": null, "admin.passwordMtime": null}}'
+        kubectl rollout restart deployment argocd-server -n argocd
+      ;;
+    esac
+  ;;
+  esac
+;;
+help)
+show_usage
+;;
+
+*)
+show_usage
+;;
+
+esac
+
