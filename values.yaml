@@ -1,0 +1,351 @@
+cluster: https://kubernetes.default.svc
+
+destinations: |
+  - namespace: "{{ $.project }}"
+    server: "{{ .Values.cluster }}"
+
+tenants:
+  integrations:
+    destinations: |
+      - namespace: "*"
+        server: "{{ .Values.cluster }}"
+
+    roles: |
+      - name: read
+        description: Read only privileges
+        policies:
+        - p, proj:{{ $.project }}:read, applications, get, {{ $.project }}/*, allow
+        groups:
+        - /Platform One/System Admins/Cyber Auditors
+
+    apps:
+#      ##authservice:
+#      ##  wave: 1
+#      ##  path: integrations/authservice/base/
+#      ##  prod: true
+
+      abms-link16ctc:
+        wave: 1
+        path: integrations/link16ctc/overlays/{{ .Values.env }}/
+        prod: true
+
+      araknid:
+        wave: 1
+        path: integrations/araknid/overlays/{{ .Values.env }}
+        prod: true
+
+##      battledrill:
+##        wave: 1
+##        path: integrations/battledrill/overlays/{{ .Values.env }}/
+##        prod: true
+
+      c3po:
+        wave: 1
+        path: integrations/c3po/overlays/{{ .Values.env }}/
+        prod: true
+
+      competition:
+        wave: 1
+        path: integrations/competition/overlays/{{ .Values.env }}/
+        prod: true
+
+      clamav:
+        wave: 1
+        path: apps/clamav/overlays/{{ .Values.env }}/
+        prod: true
+
+      cole:
+        wave: 1
+        path: integrations/cole/overlays/{{ .Values.env }}/
+        prod: true
+
+      darts:
+        wave: 1
+        path: integrations/darts/overlays/{{ .Values.env }}/
+        prod: true
+
+      deloittedau:
+        wave: 1
+        path: integrations/deloittedau/overlays/{{ .Values.env }}/
+        prod: true
+
+      defconai:
+        wave: 1
+        path: integrations/defconai/overlays/{{ .Values.env }}/
+        prod: true
+
+      drac:
+        wave: 1
+        path: integrations/red-dragon/overlays/{{ .Values.env }}/
+        prod: true
+
+      fuelai:
+        wave: 1
+        path: integrations/fuelai/overlays/{{ .Values.env }}/
+        prod: true
+
+      genesis:
+        wave: 1
+        path: integrations/genesis/overlays/{{ .Values.env }}/
+        prod: true
+
+##      gsw-odin:
+##        wave: 1
+##        path: integrations/gsw-odin/overlays/{{ .Values.env }}/
+##        prod: true
+
+#      ##istio:
+#      ##  wave: 1
+#      ##  path: integrations/istio-envoy-filters/overlays/{{ .Values.env }}/
+#      ##  prod: true
+
+#      ##jaic-fsca:
+#      ##  wave: 1
+#      ##  path: integrations/fsca-basalt/overlays/{{ .Values.env }}/
+#      ##  prod: true
+
+      jadii-ui:
+        wave: 1
+        path: integrations/jadii-ui/overlays/{{ .Values.env }}/
+        prod: true
+
+      kraken:
+        wave: 1
+        path: integrations/kraken/overlays/{{ .Values.env }}/
+        prod: true
+
+      learn-to-win:
+        wave: 1
+        path: integrations/learn-to-win/overlays/{{ .Values.env }}/
+        prod: true
+
+      minio:
+        wave: -3
+        path: apps/minio/overlays/{{ .Values.env }}/
+        prod: true
+
+#      ##prometheus:
+#      ##  wave: 1
+#      ##  path: integrations/prometheus/base/
+#      ##  prod: true
+
+##      rdpl:
+##        wave: 1
+##        path: integrations/rdpl/overlays/{{ .Values.env }}/
+##        prod: true
+
+      saber:
+        wave: 1
+        path: integrations/saber/overlays/{{ .Values.env }}/
+        prod: true
+
+      tiger-ranch:
+        wave: 1
+        path: integrations/tiger-ranch/overlays/{{ .Values.env }}/
+        prod: true
+
+      virtualitics:
+        wave: 1
+        path: integrations/virtualitics/overlays/{{ .Values.env }}/
+        prod: true
+
+      widow:
+        wave: 1
+        path: integrations/widow/overlays/{{ .Values.env }}/
+        prod: true
+
+      wingmanai:
+        wave: 1
+        path: integrations/wingmanai/overlays/{{ .Values.env }}/
+        prod: true
+
+      maven-world:
+        wave: 1
+        path: integrations/hello-apps/maven-world/overlays/{{ .Values.env }}/
+        prod: true
+
+
+
+  abms-link16ctc:
+    apps:
+      abms-link16ctc:
+        wave: 5
+        path: mission-manifests/link16ctc/sipr/overlays/{{ .Values.env }}/
+        prod: true
+
+  araknid:
+    apps:
+      araknid:
+        wave: 5
+        path: mission-manifests/araknid/il4/overlays/{{ .Values.env }}/
+        prod: true
+
+##  battledrill:
+##    apps:
+##      battledrill:
+##        wave: 5
+##        path: mission-manifests/battledrill/il4/overlays/{{ .Values.env }}/
+##        prod: true
+
+  c3po:
+    apps:
+      c3po:
+        wave: 5
+        path: mission-manifests/c3po/il2/overlays/{{ .Values.env }}/
+        prod: true
+
+  competition:
+    apps:
+      competition:
+        wave: 5
+        path: mission-manifests/competition/il5/overlays/{{ .Values.env }}/
+        prod: true
+
+  clamav:
+    apps:
+      clamav:
+        wave: 5
+        path: mission-manifests/clamav/il4/overlays/{{ .Values.env }}/
+        prod: true
+
+  cole:
+    apps:
+      cole:
+        wave: 1
+        path: mission-manifests/cole-manifests/jwics/overlays/{{ .Values.env }}/
+        prod: true
+
+  darts:
+    apps:
+      darts:
+        wave: 1
+        path: mission-manifests/darts/sipr/overlays/{{ .Values.env }}/
+        prod: true
+
+  deloittedau:
+    apps:
+      deloittedau:
+        wave: 1
+        path: mission-manifests/deloittedau/il2/overlays/{{ .Values.env }}/
+        prod: true
+
+  defconai:
+    apps:
+      defconai:
+        wave: 5
+        path: mission-manifests/defconai/nipr/overlays/{{ .Values.env }}/
+        prod: true
+
+  drac:
+    apps:
+      drac:
+        wave: 5
+        path: mission-manifests/red-dragon/sipr/overlays/{{ .Values.env }}/
+        prod: true
+
+  fuelai:
+    apps:
+      fuelai:
+        wave: 5
+        path: mission-manifests/fuelai/jwics/overlays/{{ .Values.env }}/
+        prod: true
+
+  genesis:
+    apps:
+      genesis:
+        wave: 5
+        path: mission-manifests/genesis/il4/overlays/{{ .Values.env }}/
+        prod: true
+
+##  gsw-odin:
+##    apps:
+##      gsw-odin:
+##        wave: 5
+##        path: mission-manifests/gsw-odin/sipr/overlays/{{ .Values.env }}/
+##        prod: true
+
+##  jaic-fsca:
+##    apps:
+##      jaic-fsca:
+##        wave: 5
+##        path: mission-manifests/fsca-basalt/il2/overlays/{{ .Values.env }}/
+##        prod: true
+
+  jadii-ui:
+    apps:
+      jadii-ui:
+        wave: 5
+        path: mission-manifests/jadii-ui/uc2s/overlays/{{ .Values.env }}/
+        prod: true
+
+  kraken:
+    apps:
+      kraken:
+        wave: 5
+        path: mission-manifests/kraken/il4/overlays/{{ .Values.env }}/
+        prod: true
+
+  learn-to-win:
+    apps:
+      learn-to-win:
+        wave: 5
+        path: mission-manifests/learn-to-win-manifests/il4/overlays/{{ .Values.env }}/
+        prod: true
+
+  minio:
+     apps:
+      minio:
+        wave: -2
+        path: mission-manifests/minio/minio-helm-core/
+        prod: true
+
+##  rdpl:
+##    apps:
+##      rdpl:
+##        wave: 5
+##        path: mission-manifests/rdpl/il2/overlays/{{ .Values.env }}/
+##        prod: true
+
+  saber:
+    apps:
+      saber:
+       wave: 5
+       path: mission-manifests/saber/il2/overlays/{{ .Values.env }}/
+       prod: true
+
+  tiger-ranch:
+    apps:
+      tiger-ranch:
+        wave: 5
+        path: mission-manifests/tiger-ranch/jwics/overlays/{{ .Values.env }}/
+        prod: true
+
+  virtualitics:
+    apps:
+      virtualitics:
+        wave: 5
+        path: mission-manifests/virtualitics/sipr/overlays/{{ .Values.env }}/
+        prod: true
+
+  widow:
+    apps:
+      widow:
+        wave: 5
+        path: mission-manifests/widow/il4/overlays/{{ .Values.env }}/
+        prod: true
+
+  wingmanai:
+    apps:
+      wingmanai:
+        wave: 5
+        path: mission-manifests/wingmanai/il4/overlays/{{ .Values.env }}/
+        prod: true
+
+  maven-world:
+    apps:
+      maven-world:
+        repoURL: https://gitlab.odin.dso.mil/platform-one/devops/hello-pipeline/hello-manifests/maven-world.git
+        targetRevision: HEAD
+        wave: 5
+        path: il2/overlays/{{ .Values.env }}
+        prod: true
